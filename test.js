@@ -90,6 +90,16 @@ t('会抢占交叉点做双重活四杀', () => {
   const mv = G.bestMove(b, B, 'hard');
   assert.deepStrictEqual([mv.x, mv.y], [7, 7], JSON.stringify(mv));
 });
+t('执白(后手)同样立即取胜', () => {
+  const b = mk([[4, 7, W], [5, 7, W], [6, 7, W], [7, 7, W], [2, 2, B], [12, 12, B]]);
+  const mv = G.bestMove(b, W, 'medium');
+  assert.ok(mv.y === 7 && (mv.x === 3 || mv.x === 8), JSON.stringify(mv));
+});
+t('执白同样必挡对方冲四', () => {
+  const b = mk([[4, 7, B], [5, 7, B], [6, 7, B], [8, 7, B], [2, 2, W], [12, 12, W]]);
+  const mv = G.bestMove(b, W, 'medium');
+  assert.deepStrictEqual([mv.x, mv.y], [7, 7], JSON.stringify(mv));
+});
 
 console.log('— 对局模拟 —');
 function selfPlay(lb, lw, maxMoves) {

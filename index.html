@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="dark" />
+<title>智能五子棋</title>
+<style>
+  :root { --card: rgba(255,255,255,.055); --line: rgba(255,255,255,.09); --accent: #f0b429; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; color: #e8ecf3;
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+    background: radial-gradient(1100px 700px at 15% -10%, #2b3450 0%, #171c26 55%, #10131b 100%);
+  }
+  .app { max-width: 1120px; margin: 0 auto; padding: 26px 20px 40px; }
+  header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 26px; letter-spacing: 3px; }
+  header .sub { color: #9aa5b5; font-size: 13px; }
+  main { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
+  .board-wrap { position: relative; flex: 1 1 560px; max-width: 628px; }
+  canvas {
+    display: block; width: 100%; height: auto; border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.5), 0 2px 8px rgba(0,0,0,.4);
+    cursor: pointer; user-select: none; -webkit-user-select: none;
+  }
+  .banner {
+    position: absolute; inset: 0; border-radius: 14px;
+    display: flex; flex-direction: column; gap: 16px; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  .banner.hidden { display: none; }
+  .banner .text {
+    pointer-events: auto;
+    background: rgba(12,16,26,.85); backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,.14); border-radius: 16px;
+    padding: 16px 34px; font-size: 28px; font-weight: 800;
+    box-shadow: 0 14px 40px rgba(0,0,0,.55);
+  }
+  .banner button { pointer-events: auto; flex: 0 0 auto; padding: 9px 26px; }
+  .panel { flex: 0 1 300px; min-width: 260px; display: flex; flex-direction: column; gap: 14px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .status { display: flex; align-items: center; gap: 12px; min-height: 30px; font-size: 16px; font-weight: 600; }
+  .stone-icon { width: 22px; height: 22px; border-radius: 50%; flex: 0 0 auto; }
+  .stone-icon.black { background: radial-gradient(circle at 32% 28%, #7b828c 0%, #2c3038 40%, #05070b 100%); box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+  .stone-icon.white { background: radial-gradient(circle at 32% 28%, #ffffff 0%, #f0f0ec 55%, #c6c6c0 100%); border: 1px solid rgba(0,0,0,.25); }
+  .dots::after { content: ''; animation: dots 1.2s steps(1) infinite; }
+  @keyframes dots { 0% { content: ''; } 25% { content: '·'; } 50% { content: '··'; } 75% { content: '···'; } }
+  .scores { display: flex; text-align: center; }
+  .scores .s { flex: 1; }
+  .scores .num { font-size: 22px; font-weight: 800; }
+  .scores .lab { font-size: 12px; color: #9aa5b5; margin-top: 2px; }
+  .seg-label { font-size: 14px; color: #c6cedb; margin-bottom: 6px; }
+  .seg { display: flex; gap: 6px; }
+  .seg-btn {
+    flex: 1; padding: 8px 0; font-size: 13px; font-weight: 600;
+    border-radius: 9px; cursor: pointer;
+    background: rgba(255,255,255,.07); color: #c6cedb; border: 1px solid var(--line);
+  }
+  .seg-btn.active { background: var(--accent); color: #231a05; border-color: var(--accent); }
+  .btns { display: flex; gap: 10px; }
+  button {
+    flex: 1; padding: 10px 0; font-size: 15px; font-weight: 600;
+    border: none; border-radius: 10px; cursor: pointer;
+    background: var(--accent); color: #231a05;
+  }
+  button.ghost { background: rgba(255,255,255,.08); color: #e8ecf3; border: 1px solid var(--line); }
+  button:active { transform: translateY(1px); }
+  .hint { font-size: 12px; color: #8b96a8; line-height: 1.7; }
+  .moveinfo { font-size: 13px; color: #9aa5b5; }
+  footer { margin-top: 22px; color: #77839a; font-size: 12px; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>⚫ 智能五子棋</h1>
+    <span class="sub">威胁搜索 + 迭代加深 α-β 剪枝 · 棋型评估</span>
+  </header>
+  <main>
+    <div class="board-wrap">
+      <canvas id="board"></canvas>
+      <div id="banner" class="banner hidden">
+        <div class="text" id="banner-text"></div>
+        <button id="banner-btn">再来一局</button>
+      </div>
+    </div>
+    <aside class="panel">
+      <div class="card status">
+        <div id="turn-icon" class="stone-icon black"></div>
+        <div id="status">你执黑先行，点击棋盘落子</div>
+      </div>
+      <div class="card">
+        <div class="scores">
+          <div class="s"><div class="num" id="score-h">0</div><div class="lab">你获胜</div></div>
+          <div class="s"><div class="num" id="score-d">0</div><div class="lab">平局</div></div>
+          <div class="s"><div class="num" id="score-a">0</div><div class="lab">AI 获胜</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="seg-label">AI 棋力</div>
+        <div class="seg" id="seg-level">
+          <button data-level="easy" class="seg-btn">入门</button>
+          <button data-level="medium" class="seg-btn active">进阶</button>
+          <button data-level="hard" class="seg-btn">大师</button>
+        </div>
+        <div class="seg-label" style="margin-top:12px;">先手方</div>
+        <div class="seg" id="seg-side">
+          <button data-side="human" class="seg-btn active">我先手 · 执黑</button>
+          <button data-side="ai" class="seg-btn">AI 先手 · 执黑</button>
+        </div>
+        <div class="hint">棋力切换立即生效；切换先手方会立即开始新对局。</div>
+      </div>
+      <div class="card btns">
+        <button id="btn-new">新对局</button>
+        <button id="btn-undo" class="ghost">悔棋</button>
+      </div>
+      <div class="card moveinfo" id="moveinfo">对局尚未开始</div>
+    </aside>
+  </main>
+  <footer>AI 逻辑：一步成五必争、对方冲四必挡（强制应手），双四 / 四三 / 双活三组合识别，迭代加深 α-β 搜索（大师层深 4），终局连五（含长连）自动判定并高亮。</footer>
+</div>
+
+<script src="ai.js"></script>
+<script>
+(function () {
+  'use strict';
+  var G = window.GomokuAI;
+  var N = G.SIZE, EMPTY = G.EMPTY, BLACK = G.BLACK, WHITE = G.WHITE;
+  var CELL = 40, PAD = 34;
+  var W = PAD * 2 + CELL * (N - 1); // 628
+
+  var canvas = document.getElementById('board');
+  var ctx = canvas.getContext('2d');
+  var dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+  canvas.width = W * dpr;
+  canvas.height = W * dpr;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var statusEl = $('status'), iconEl = $('turn-icon');
+  var bannerEl = $('banner'), bannerText = $('banner-text');
+  var moveInfo = $('moveinfo');
+  var curLevel = 'medium', curSide = 'human';
+
+  var S = {
+    board: G.createBoard(), history: [],
+    human: BLACK, ai: WHITE, turn: BLACK,
+    over: false, thinking: false, winCells: null,
+    hover: null, lastMove: null, token: 0
+  };
+
+  var scores = { h: 0, a: 0, d: 0 };
+  try {
+    var raw = localStorage.getItem('gomoku_scores');
+    var saved = raw ? JSON.parse(raw) : null;
+    if (saved && typeof saved.h === 'number' && typeof saved.a === 'number' && typeof saved.d === 'number') {
+      scores = saved;
+    }
+  } catch (e) {}
+  function saveScores() {
+    try { localStorage.setItem('gomoku_scores', JSON.stringify(scores)); } catch (e) {}
+    renderScores();
+  }
+  function renderScores() {
+    $('score-h').textContent = scores.h;
+    $('score-a').textContent = scores.a;
+    $('score-d').textContent = scores.d;
+  }
+
+  function coordName(x, y) { return String.fromCharCode(65 + x) + (N - y); }
+  function setIcon(color) { iconEl.className = 'stone-icon ' + (color === WHITE ? 'white' : 'black'); }
+  function setStatus(html, thinkingDots) {
+    statusEl.innerHTML = html + (thinkingDots ? '<span class="dots"></span>' : '');
+  }
+
+  /* ---------------- 绘制 ---------------- */
+
+  function drawStone(x, y, p, alpha) {
+    var cx = PAD + x * CELL, cy = PAD + y * CELL, r = 17;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.shadowColor = 'rgba(0,0,0,.35)';
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetY = 2;
+    var g = ctx.createRadialGradient(cx - 5, cy - 6, 2, cx, cy, r + 1);
+    if (p === BLACK) {
+      g.addColorStop(0, '#7b828c'); g.addColorStop(0.4, '#2c3038'); g.addColorStop(1, '#05070b');
+    } else {
+      g.addColorStop(0, '#ffffff'); g.addColorStop(0.55, '#f0f0ec'); g.addColorStop(1, '#c6c6c0');
+    }
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+    if (p === WHITE) {
+      ctx.shadowColor = 'transparent';
+      ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 1; ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function render() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    var grad = ctx.createLinearGradient(0, 0, W, W);
+    grad.addColorStop(0, '#f4dcab'); grad.addColorStop(0.55, '#e9c489'); grad.addColorStop(1, '#d9a95f');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, W);
+
+    ctx.strokeStyle = 'rgba(88,56,20,.85)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (var i = 0; i < N; i++) {
+      var o = PAD + i * CELL;
+      ctx.moveTo(o, PAD); ctx.lineTo(o, W - PAD);
+      ctx.moveTo(PAD, o); ctx.lineTo(W - PAD, o);
+    }
+    ctx.stroke();
+    ctx.lineWidth = 2;
+    ctx.strokeRect(PAD, PAD, W - 2 * PAD, W - 2 * PAD);
+
+    ctx.fillStyle = 'rgba(88,56,20,.9)';
+    [[3, 3], [11, 3], [7, 7], [3, 11], [11, 11]].forEach(function (p) {
+      ctx.beginPath(); ctx.arc(PAD + p[0] * CELL, PAD + p[1] * CELL, 4, 0, Math.PI * 2); ctx.fill();
+    });
+
+    ctx.fillStyle = 'rgba(88,56,20,.55)';
+    ctx.font = '11px "Segoe UI"';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (var c = 0; c < N; c++) {
+      ctx.fillText(String.fromCharCode(65 + c), PAD + c * CELL, PAD - 18);
+      ctx.fillText(String(N - c), PAD - 19, PAD + c * CELL);
+    }
+
+    if (S.hover && !S.over && !S.thinking && S.turn === S.human &&
+        S.board[G.idx(S.hover.x, S.hover.y)] === EMPTY) {
+      drawStone(S.hover.x, S.hover.y, S.human, 0.45);
+    }
+
+    for (var y = 0; y < N; y++) {
+      for (var x = 0; x < N; x++) {
+        var p = S.board[G.idx(x, y)];
+        if (p) drawStone(x, y, p, 1);
+      }
+    }
+
+    if (S.lastMove && !S.winCells) {
+      ctx.fillStyle = '#e64a2e';
+      ctx.beginPath();
+      ctx.arc(PAD + S.lastMove.x * CELL, PAD + S.lastMove.y * CELL, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (S.winCells) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(230,72,40,.9)';
+      ctx.lineWidth = 5; ctx.lineCap = 'round';
+      ctx.shadowColor = 'rgba(230,72,40,.8)'; ctx.shadowBlur = 10;
+      var f = S.winCells[0], l = S.winCells[S.winCells.length - 1];
+      ctx.beginPath();
+      ctx.moveTo(PAD + f[0] * CELL, PAD + f[1] * CELL);
+      ctx.lineTo(PAD + l[0] * CELL, PAD + l[1] * CELL);
+      ctx.stroke();
+      ctx.restore();
+      S.winCells.forEach(function (c) {
+        ctx.strokeStyle = 'rgba(255,255,255,.95)';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(PAD + c[0] * CELL, PAD + c[1] * CELL, 19.5, 0, Math.PI * 2); ctx.stroke();
+      });
+    }
+  }
+
+  /* ---------------- 交互 ---------------- */
+
+  function evtPos(e) {
+    var rect = canvas.getBoundingClientRect();
+    var mx = (e.clientX - rect.left) * (W / rect.width);
+    var my = (e.clientY - rect.top) * (W / rect.height);
+    var gx = Math.round((mx - PAD) / CELL), gy = Math.round((my - PAD) / CELL);
+    if (gx < 0 || gx >= N || gy < 0 || gy >= N) return null;
+    return { x: gx, y: gy };
+  }
+
+  canvas.addEventListener('mousemove', function (e) {
+    var p = evtPos(e);
+    var changed = (p && (!S.hover || p.x !== S.hover.x || p.y !== S.hover.y)) || (!p && S.hover);
+    S.hover = p;
+    if (changed) render();
+  });
+  canvas.addEventListener('mouseleave', function () {
+    if (S.hover) { S.hover = null; render(); }
+  });
+  canvas.addEventListener('click', function (e) {
+    if (S.over || S.thinking || S.turn !== S.human) return;
+    var p = evtPos(e);
+    if (!p || S.board[G.idx(p.x, p.y)] !== EMPTY) return;
+    doMove(p.x, p.y, S.human);
+  });
+
+  /* ---------------- 对局流程 ---------------- */
+
+  function doMove(x, y, p) {
+    S.board[G.idx(x, y)] = p;
+    S.history.push({ x: x, y: y, p: p });
+    S.lastMove = { x: x, y: y, p: p };
+    S.hover = null;
+
+    var win = G.getWinLine(S.board, x, y);
+    if (win) { S.over = true; S.winCells = win; endGame(p); render(); return; }
+    if (G.isBoardFull(S.board)) { S.over = true; endGame(0); render(); return; }
+
+    S.turn = G.other(p);
+    if (S.turn === S.ai) scheduleAI();
+    else { setIcon(S.human); setStatus('轮到你落子'); }
+    render();
+  }
+
+  function scheduleAI() {
+    S.thinking = true;
+    setIcon(S.ai);
+    setStatus('AI 思考中', true);
+    render();
+    var myToken = S.token;
+    var t0 = performance.now();
+    setTimeout(function () {
+      if (myToken !== S.token) return;
+      var mv = G.bestMove(S.board, S.ai, curLevel);
+      var used = performance.now() - t0;
+      var info = mv ? ('AI 落子 ' + coordName(mv.x, mv.y) + ' · 用时 ' + (used / 1000).toFixed(2) + 's') : '';
+      setTimeout(function () {
+        if (myToken !== S.token || S.over) return;
+        S.thinking = false;
+        if (!mv) { endGame(0); render(); return; }
+        moveInfo.textContent = '第 ' + (S.history.length + 1) + ' 手 · ' + info;
+        doMove(mv.x, mv.y, S.ai);
+      }, Math.max(0, 450 - used));
+    }, 80);
+  }
+
+  function endGame(winner) {
+    S.over = true;
+    if (winner === 0) {
+      scores.d++;
+      bannerText.textContent = '🤝 平局';
+      setStatus('平局，棋盘已下满');
+    } else if (winner === S.human) {
+      scores.h++;
+      bannerText.textContent = '🎉 你赢了！';
+      setStatus('恭喜，你获胜了！');
+      setIcon(winner);
+    } else {
+      scores.a++;
+      bannerText.textContent = '🤖 AI 获胜';
+      setStatus('AI 获胜，再接再厉！');
+      setIcon(winner);
+    }
+    saveScores();
+    bannerEl.classList.remove('hidden');
+  }
+
+  function newGame() {
+    S.token++;
+    S.board = G.createBoard();
+    S.history = [];
+    S.over = false; S.thinking = false; S.winCells = null;
+    S.lastMove = null; S.hover = null;
+    S.human = curSide === 'ai' ? WHITE : BLACK;
+    S.ai = G.other(S.human);
+    S.turn = BLACK;
+    bannerEl.classList.add('hidden');
+    moveInfo.textContent = '对局开始';
+    if (S.ai === BLACK) scheduleAI();
+    else { setIcon(BLACK); setStatus('你执黑先行，点击棋盘落子'); }
+    render();
+  }
+
+  function undo() {
+    if (!S.history.length) return;
+    if (S.human === WHITE && S.history.length <= 1) return; // 只剩 AI 首手，无可悔
+    S.token++;            // 取消进行中的 AI 计算
+    S.thinking = false;
+    if (S.history[S.history.length - 1].p === S.ai) S.history.pop();
+    if (S.history.length && S.history[S.history.length - 1].p === S.human) S.history.pop();
+
+    S.board = G.createBoard();
+    for (var i = 0; i < S.history.length; i++) {
+      var m = S.history[i];
+      S.board[G.idx(m.x, m.y)] = m.p;
+    }
+    var last = S.history[S.history.length - 1];
+    S.lastMove = last ? { x: last.x, y: last.y, p: last.p } : null;
+    S.over = false; S.winCells = null; S.hover = null;
+    S.turn = S.human;
+    bannerEl.classList.add('hidden');
+    setIcon(S.human);
+    setStatus('已悔棋，轮到你重新落子');
+    moveInfo.textContent = '第 ' + S.history.length + ' 手';
+    render();
+  }
+
+  function setLevel(l) {
+    curLevel = l;
+    Array.prototype.forEach.call($('seg-level').children, function (b) {
+      b.classList.toggle('active', b.dataset.level === l);
+    });
+  }
+  function setSide(s) {
+    if (curSide === s) return;
+    curSide = s;
+    Array.prototype.forEach.call($('seg-side').children, function (b) {
+      b.classList.toggle('active', b.dataset.side === s);
+    });
+    newGame(); // 切换先手方立即开始新对局
+  }
+  $('seg-level').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-level]');
+    if (btn) setLevel(btn.dataset.level);
+  });
+  $('seg-side').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-side]');
+    if (btn) setSide(btn.dataset.side);
+  });
+
+  $('btn-new').addEventListener('click', newGame);
+  $('banner-btn').addEventListener('click', newGame);
+  $('btn-undo').addEventListener('click', undo);
+  renderScores();
+  newGame();
+
+  // 调试 / 自动化测试钩子
+  window.__gomoku = { S: S, doMove: doMove, newGame: newGame, undo: undo };
+})();
+</script>
+</body>
+</html>

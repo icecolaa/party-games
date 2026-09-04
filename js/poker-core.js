@@ -112,7 +112,6 @@ function evalScore(cards) {
   return packScore(0, [singles[0], singles[1], singles[2], singles[3], singles[4]]);
 }
 
-const CAT_NAMES = ['高牌', '一对', '两对', '三条', '顺子', '同花', '葫芦', '四条', '同花顺'];
 const CAT_POW = 15 * 15 * 15 * 15 * 15; // 759375
 
 function handName(score) {

@@ -43,7 +43,7 @@ function calcThreat(p) {
   const la = G.lastAggressor;
   if (la && la !== p && la.inHand) {
     const s = la.stats;
-    const ar = (s.raises + s.bets) / Math.max(1, s.hands);
+    const ar = s.raises / Math.max(1, s.hands);
     if (ar > 0.8) t += 0.03;
     else if (ar < 0.2) t -= 0.02;
   }
@@ -57,7 +57,7 @@ function stationFactor(p) {
   let sticky = 0;
   others.forEach(o => {
     const s = o.stats;
-    const dec = s.folds + s.calls + s.raises + s.bets;
+    const dec = s.folds + s.calls + s.raises;
     if (dec > 0 && s.folds / dec < 0.28) sticky++;
   });
   return sticky / others.length;
@@ -78,8 +78,8 @@ function aiDecide(p) {
   let eq = estimateEquity(p.hole, G.board, opps, trials);
   eq = clampEq(eq + (Math.random() - 0.5) * cfg.noise); // 低难度引入判断噪声
 
-  // 大师绝技：翻牌前/翻牌圈用超强牌慢打设陷阱
-  const slowplay = diff === 'master' && eq > 0.90 && G.street !== 'turn' && Math.random() < 0.25;
+  // 大师绝技：翻牌/转牌用超强牌慢打设陷阱（河牌不再慢打，避免损失价值）
+  const slowplay = diff === 'master' && eq > 0.90 && G.street !== 'river' && Math.random() < 0.25;
 
   const toCall = Math.min(Math.max(0, G.currentBet - p.bet), p.chips);
   const pot = G.pot;

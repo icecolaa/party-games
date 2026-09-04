@@ -146,6 +146,8 @@ function genCode() {
 }
 
 function createRoom(conn, name) {
+  // 防止重复点击：已有未开局的房间则直接返回房间信息
+  if (conn.room && !conn.room.started) { sendRoomInfo(conn.room); return; }
   const code = genCode();
   const room = {
     code,
@@ -244,7 +246,6 @@ function uiShowResult(payload){ __room.hooks.result(payload); }
 function uiWaitContinue(){ return __room.hooks.waitContinue(); }
 function uiShowGameOver(payload){ __room.hooks.gameover(payload); }
 function netHumanTurn(p){ return __room.hooks.humanTurn(p); }
-function buildTableOnce(){}
 window.__uiLog = function(m, c){ __room.hooks.log(m, c); };
 `;
 
@@ -446,15 +447,18 @@ function onConnClose(conn) {
   if (seat && seat.ws === conn.socket) {
     seat.ws = null;
     seat.disconnected = true;
-    if (room.started && room.G && !room.G.over) {
-      broadcast(room, { t: 'log', msg: `⚠ ${seat.name} 与服务器断开，轮到时将自动代打`, cls: 'alert' });
-      const entry = room.pending.get(conn.seat);
-      if (entry) {
-        clearTimeout(entry.timer);
-        entry.timer = setTimeout(entry.force, 5000);
+    if (room.started) {
+      if (!roomConns(room).length) { rooms.delete(room.code); return; } // 全员离开，回收房间
+      if (room.G && !room.G.over) {
+        broadcast(room, { t: 'log', msg: `⚠ ${seat.name} 与服务器断开，轮到时将自动代打`, cls: 'alert' });
+        const entry = room.pending.get(conn.seat);
+        if (entry) {
+          clearTimeout(entry.timer);
+          entry.timer = setTimeout(entry.force, 5000);
+        }
+        broadcastState(room);
       }
-      broadcastState(room);
-    } else if (!room.started) {
+    } else {
       // 未开局：直接移除出房间
       room.seats.splice(conn.seat, 1);
       if (room.hostSeat === conn.seat && room.seats.length) room.hostSeat = 0;

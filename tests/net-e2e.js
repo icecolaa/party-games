@@ -112,7 +112,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const B = await wsConnect(PORT);
   const roomBP = waitFor(B, m => m.t === 'room', 5000, '加入响应');
   B.send({ t: 'join', code, name: '乙' });
-  const roomB = await roomBMsg(roomBP);
+  const roomB = await roomBP;
   assert(roomB.seat === 1 && roomB.room.players.length === 2, '加入者应为 1 号位');
 
   A.send({ t: 'config', aiFill: 1, bb: 20, startChips: 1000, difficulty: 'mid' });
@@ -177,5 +177,3 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   server.close();
   process.exit(failed ? 1 : 0);
 })().catch(e => { console.error('ERROR:', e); process.exit(1); });
-
-function roomBMsg(p) { return p; }

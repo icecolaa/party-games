@@ -22,7 +22,7 @@ function newPlayer(name, isHuman, avatar) {
     inHand: false, folded: false, allIn: false, out: false, acted: false,
     revealed: false, score: 0, won: 0, lastAction: '', isWinner: false,
     persona: null,
-    stats: { hands: 0, folds: 0, calls: 0, raises: 0, bets: 0 }
+    stats: { hands: 0, folds: 0, calls: 0, raises: 0 }
   };
 }
 
@@ -245,7 +245,6 @@ async function bettingRound(isPreflop) {
       renderAll();
       const act = p.isHuman ? await humanTurn(p) : await aiTurn(p);
       applyAction(p, act);
-      uiAfterAction(p);
       renderAll();
       if (handOverByFolds()) break;
     }

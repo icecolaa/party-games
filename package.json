@@ -1,0 +1,24 @@
+{
+  "name": "dezhou",
+  "version": "1.0.0",
+  "description": "单机 AI 对战 · 双人本地热座 · 联网房间对战，2~8 人同桌的德州扑克完整实现。 AI 基于蒙特卡洛模拟精确估算胜率，并结合底池赔率、位置、对手行为做出策略决策。",
+  "main": "server.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitee.com/ice-colaa/dezhou-poker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "jsdom": "^30.0.1"
+  }
+}

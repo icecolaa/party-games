@@ -170,10 +170,6 @@ function uiUpdateTop() {
   $('handInfo').textContent = `第 ${G.handNo} 局 ｜ 盲注 ${G.sb}/${G.bb} ｜ AI 难度：${G.difficultyLabel || '—'}`;
 }
 
-function uiSetActive() {} /* 兼容旧驱动存根 */
-function uiSetThinking() {}
-function uiAfterAction() {}
-
 /* ---------- 胜率提示 ---------- */
 
 function updateEquityBadge() {
@@ -384,6 +380,10 @@ function uiShowGameOver(payload) {
   ).join('');
   $('goStandings').innerHTML =
     '<table><tr><th>#</th><th>玩家</th><th>剩余筹码</th><th>累计赢取</th></tr>' + rows + '</table>';
+  // 联网时仅房主可重开，其他人显示等待提示
+  const canRestart = !NET.isNet || NET.host;
+  $('restartBtn').style.display = canRestart ? '' : 'none';
+  $('goHint').textContent = canRestart ? '' : '等待房主开始新一局…';
   $('gameOverOverlay').classList.remove('hidden');
   $('restartBtn').onclick = () => {
     if (NET.isNet) {
@@ -463,6 +463,7 @@ function netHandle(msg) {
       break;
     case 'err':
       uiLog(msg.msg, 'alert');
+      if (!NET.room) netFail(msg.msg); // 尚未进房（如加入失败）时在大厅区给出可见提示
       break;
   }
 }
@@ -470,13 +471,14 @@ function netHandle(msg) {
 function applyNetState(msg) {
   NET.meIdx = msg.you;
   const g = msg.g;
-  if (UI.seatEls.length !== g.players.length) buildTableOnce();
+  // 必须先更新 G（座位表按 G.players 构建），再重建座位表
   G.players = g.players;
   G.board = g.board;
   G.pot = g.pot; G.currentBet = g.currentBet; G.lastRaise = g.lastRaise;
   G.street = g.street; G.dealerIdx = g.dealerIdx; G.handNo = g.handNo;
   G.sb = g.sb; G.bb = g.bb; G.difficultyLabel = g.difficultyLabel;
   G.turnIdx = g.turnIdx; G.raisesThisStreet = g.raisesThisStreet || 0;
+  if (UI.seatEls.length !== g.players.length) buildTableOnce();
   UI.viewing = NET.meIdx;
   $('gameOverOverlay').classList.add('hidden');
   renderAll();

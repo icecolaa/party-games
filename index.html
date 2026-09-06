@@ -42,15 +42,17 @@
   .confirm-bar {
     position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
     display: flex; gap: 10px; padding: 8px 10px;
-    background: rgba(15,20,30,.94); backdrop-filter: blur(6px);
-    border: 1px solid rgba(255,255,255,.14); border-radius: 14px;
+    width: max-content; max-width: none; /* left:50% 定位会把可用宽压到一半，必须显式按内容取宽，否则按钮溢出背景 */
+    background: #10141d; /* 实色底：iOS 对 backdrop-filter 内子元素渲染不稳定，实色保证背景完整包裹按钮 */
+    border: 1px solid rgba(255,255,255,.16); border-radius: 14px;
     box-shadow: 0 10px 30px rgba(0,0,0,.5);
   }
   .confirm-bar.hidden { display: none; }
   .confirm-hint {
     position: absolute; left: 50%; bottom: 64px; transform: translateX(-50%);
+    width: max-content; max-width: calc(100vw - 24px);
     background: rgba(15,20,30,.94); border-radius: 10px; padding: 7px 14px;
-    font-size: 13px; max-width: 88%; text-align: center; pointer-events: none;
+    font-size: 13px; text-align: center; pointer-events: none;
     border: 1px solid rgba(255,255,255,.18);
   }
   .confirm-hint.hidden { display: none; }

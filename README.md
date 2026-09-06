@@ -26,6 +26,18 @@ npm start          # 启动统一服务器，默认 http://127.0.0.1:8600/
 - 联机玩法：同一网络下，好友用手机访问 `http://<电脑IP>:8600/`
 - `PORT` 环境变量可改端口；部署到 PaaS 时平台注入 `PORT` 即可
 
+## 部署到 PocketBay
+
+平台以 `npm start` 启动（服务器已按 `0.0.0.0` 绑定，`PORT` 由平台注入）。上传约定：
+
+- 打包**仓库根目录整体**为一个应用（`zip` / `tar.gz`，排除 `.git`、`node_modules`）
+- 打包时**必须排除** `apps/wuziqi/package.json` 与 `apps/dezhou-poker/package.json`
+  （它们仅用于本地独立运行；平台按 package.json 识别产品，多出一个会报
+  `application_ambiguous` 拒绝部署）
+- 若平台要求选择「这次要发布哪一个」，选择**根目录产品**（统一入口：游戏大厅 + 全部游戏），
+  不要选择单个游戏子目录，也不要拆成多个站点
+- 部署成功后联机接口与 WebSocket 均走平台分配的同一域名，无需额外配置
+
 ## 目录结构
 
 ```

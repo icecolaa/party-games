@@ -124,6 +124,7 @@ function bootPage(name) {
   const A = bootPage('甲');
   A.click(A.$('netBtn'));
   assert(A.$('netPanel').style.display !== 'none', '点击联网对战应显示联网面板');
+  assert(A.$('netAddr').value === 'ws://127.0.0.1:8899/poker/ws', '默认联网地址应带 /poker/ws 前缀（统一入口路由约定）: ' + A.$('netAddr').value);
   A.$('netName').value = '甲';
   A.click(A.$('netCreate'));
   let guard = 0;

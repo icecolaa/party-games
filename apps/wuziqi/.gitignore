@@ -1,0 +1,13 @@
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# 依赖/日志
+node_modules/
+*.log
+
+# 部署产物
+pocketbay-deploy.zip
+pocketbay-deploy.tar.gz
+wuziqi-standalone.html

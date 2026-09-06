@@ -6,3 +6,7 @@ Desktop.ini
 # 依赖/日志
 node_modules/
 *.log
+
+# 部署产物
+pocketbay-deploy.zip
+wuziqi-standalone.html

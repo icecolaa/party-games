@@ -48,6 +48,8 @@ function bindUI() {
     };
   });
   $('equityToggle').onchange = () => renderAll();
+  $('logToggle').onclick = toggleLogPanel;
+  $('logClose').onclick = toggleLogPanel;
   $('rulesBtn').onclick = () => $('rulesOverlay').classList.remove('hidden');
   $('rulesClose').onclick = () => $('rulesOverlay').classList.add('hidden');
   $('newGameBtn').onclick = () => {

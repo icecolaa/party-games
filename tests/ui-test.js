@@ -169,6 +169,33 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   assert($('goStandings').textContent.includes('你'), '积分榜应包含玩家');
   assert($('goTitle').textContent.includes('恭喜'), '获胜标题应正确');
 
+  // ---- T9 窄屏（手机）座位布局 ----
+  console.log('[T9] 窄屏座位布局');
+  const wideSpan = UI.seatEls.length
+    ? Math.max(...UI.seatEls.map(el => parseFloat(el.style.left))) - Math.min(...UI.seatEls.map(el => parseFloat(el.style.left)))
+    : 0;
+  const origMM = window.matchMedia;
+  window.matchMedia = q => ({ matches: String(q).includes('max-width'), media: String(q) });
+  window.syncViewportMode();
+  assert(document.body.classList.contains('m-viewport'), '窄屏应添加 m-viewport 类');
+  window.buildTableOnce();
+  window.renderAll();
+  assert(UI.seatEls.length === G.players.length, '窄屏重建后座位数应一致');
+  for (let i = 0; i < UI.seatEls.length; i++) {
+    const left = parseFloat(UI.seatEls[i].style.left);
+    const top = parseFloat(UI.seatEls[i].style.top);
+    assert(left >= 5 && left <= 95, `座位${i} left=${left}% 应在 [5,95] 内`);
+    assert(top >= 6 && top <= 94, `座位${i} top=${top}% 应在 [6,94] 内`);
+  }
+  const xs = UI.seatEls.map(el => parseFloat(el.style.left));
+  const narrowSpan = Math.max(...xs) - Math.min(...xs);
+  assert(narrowSpan < wideSpan, `窄屏椭圆应比横向更窄（${narrowSpan.toFixed(1)}% < ${wideSpan.toFixed(1)}%）`);
+  window.matchMedia = origMM;
+  window.syncViewportMode();
+  assert(!document.body.classList.contains('m-viewport'), '恢复宽屏后应移除 m-viewport');
+  window.buildTableOnce();
+  window.renderAll();
+
   console.log(`\n结果: PASS ${passed} / FAIL ${failed}`);
   window.close();
   process.exit(failed ? 1 : 0);

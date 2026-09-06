@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>智能德州扑克 · Texas Hold'em AI</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -12,7 +12,8 @@
     <div class="logo">🂡 智能德州扑克</div>
     <div id="handInfo" class="hand-info">准备中…</div>
     <div class="top-actions">
-      <label class="toggle"><input type="checkbox" id="equityToggle" checked> 显示我的胜率</label>
+      <label class="toggle"><input type="checkbox" id="equityToggle" checked> 胜率</label>
+      <button id="logToggle" class="ghost log-toggle" title="对局记录">📜</button>
       <button id="rulesBtn" class="ghost">牌型说明</button>
       <button id="newGameBtn" class="ghost">重新开始</button>
     </div>
@@ -32,7 +33,7 @@
       </div>
     </section>
     <aside id="logPanel">
-      <div class="log-title">对局记录</div>
+      <div class="log-title">对局记录 <button id="logClose" class="ghost log-close">✕ 收起</button></div>
       <div id="logList"></div>
     </aside>
   </main>

@@ -201,6 +201,7 @@ async function sim(total, diff, hands, humans) {
   const seatCount = ctx.G.players.length;
   let h = 0, showdowns = 0;
   while (!ctx.G.over && h < hands) {
+    h++; // 进入即计数：首局即终局也算完成
     await ctx.playHand();
     const sum = ctx.G.players.reduce((s, p) => s + p.chips, 0);
     if (sum !== 1000 * seatCount) throw new Error(`筹码泄漏: 总和 ${sum} != ${1000 * seatCount}`);
@@ -213,7 +214,6 @@ async function sim(total, diff, hands, humans) {
     ctx.applyEliminations();
     if (ctx.G.over) break;
     ctx.G.dealerIdx = ctx.nextChipIdx(ctx.G.dealerIdx);
-    h++;
   }
   console.log(`  ${total}人/${diff}${humans > 1 ? `/${humans}真人` : ''}: 完成 ${h} 局（摊牌 ${showdowns} 局），over=${ctx.G.over}`);
   assert(h > 0, `${total}人/${diff} 至少应完成一局`);

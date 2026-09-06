@@ -35,6 +35,27 @@ function backHTML() { return '<div class="card back"></div>'; }
 
 /* ---------- 桌面构建 ---------- */
 
+/* 视口模式：≤700px 走竖向紧凑椭圆（rx 小 ry 大），否则横向椭圆 */
+function isNarrowViewport() {
+  try {
+    if (typeof window.matchMedia === 'function') return window.matchMedia('(max-width: 700px)').matches;
+  } catch (e) { /* 某些环境（如旧版 jsdom）不提供 matchMedia */ }
+  return (window.innerWidth || 1024) <= 700;
+}
+
+function tableParams() {
+  return isNarrowViewport() ? { rx: 33, ry: 40 } : { rx: 41, ry: 37 };
+}
+
+/* 视口跨档时重建座位表；并同步 body.m-viewport 供样式与测试使用 */
+function syncViewportMode() {
+  const narrow = isNarrowViewport();
+  if (narrow !== document.body.classList.contains('m-viewport')) {
+    document.body.classList.toggle('m-viewport', narrow);
+    if (G.players.length && UI.seatEls.length) { buildTableOnce(); renderAll(); }
+  }
+}
+
 function buildTableOnce() {
   const seatsBox = $('seats');
   seatsBox.innerHTML = '';
@@ -43,7 +64,8 @@ function buildTableOnce() {
   tableEl.querySelectorAll('.bet-spot, .dealer-btn').forEach(e => e.remove());
 
   const L = Math.max(2, G.players.length);
-  const cx = 50, cy = 50, rx = 41, ry = 37;
+  const { rx, ry } = tableParams();
+  const cx = 50, cy = 50;
   for (let i = 0; i < L; i++) {
     const ang = (90 + i * 360 / L) * Math.PI / 180;
     const x = cx + rx * Math.cos(ang);
@@ -355,6 +377,17 @@ function finishContinue() {
 
 function uiWaitContinue() {
   return new Promise(res => { UI.continueResolver = res; });
+}
+
+/* 移动端对局记录抽屉 */
+function toggleLogPanel() {
+  document.body.classList.toggle('log-open');
+}
+
+/* 视口变化监听（模块加载即生效；转屏/跨断点时自动重排座位） */
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  window.addEventListener('resize', syncViewportMode);
+  if (document.body) syncViewportMode();
 }
 
 /* ---------- 终局 ---------- */

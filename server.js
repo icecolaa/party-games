@@ -27,7 +27,10 @@ const server = http.createServer((req, res) => {
   if (!file.startsWith(root)) { res.writeHead(403); res.end(); return; }
   fs.readFile(file, (err, data) => {
     if (err) { res.writeHead(404); res.end('Not Found'); return; }
-    res.writeHead(200, { 'Content-Type': mime[path.extname(file)] || 'application/octet-stream' });
+    const ext = path.extname(file);
+    // HTML 不缓存（保证更新即时生效）；带版本号参数的静态资源可长缓存
+    const cache = ext === '.html' ? 'no-cache' : 'public, max-age=86400';
+    res.writeHead(200, { 'Content-Type': mime[ext] || 'application/octet-stream', 'Cache-Control': cache });
     res.end(data);
   });
 });

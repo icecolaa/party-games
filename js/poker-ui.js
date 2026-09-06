@@ -157,7 +157,8 @@ function renderAll() {
     if (cardsEl.innerHTML !== html) cardsEl.innerHTML = html;
 
     el.querySelector('.p-ava').textContent = p.avatar;
-    el.querySelector('.p-name').textContent = p.name + (mySeatIdx() === i ? '（你）' : '');
+    const showYou = mySeatIdx() === i && p.name !== '你'; // 本地昵称就叫“你”时不再重复标注
+    el.querySelector('.p-name').textContent = p.name + (showYou ? '（你）' : '');
     el.querySelector('.p-chips').textContent = p.out ? '已淘汰' : '🪙 ' + fmt(p.chips);
     const st = el.querySelector('.p-status');
     st.textContent = seatStatusText(p, i);

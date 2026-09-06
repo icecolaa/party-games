@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="color-scheme" content="dark" />
 <title>智能五子棋</title>
 <style>
@@ -23,6 +23,7 @@
     display: block; width: 100%; height: auto; border-radius: 14px;
     box-shadow: 0 20px 50px rgba(0,0,0,.5), 0 2px 8px rgba(0,0,0,.4);
     cursor: pointer; user-select: none; -webkit-user-select: none;
+    touch-action: none; -webkit-touch-callout: none;
   }
   .banner {
     position: absolute; inset: 0; border-radius: 14px;
@@ -38,6 +39,17 @@
     box-shadow: 0 14px 40px rgba(0,0,0,.55);
   }
   .banner button { pointer-events: auto; flex: 0 0 auto; padding: 9px 26px; }
+  .confirm-bar {
+    position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+    display: flex; gap: 10px; padding: 8px 10px;
+    background: rgba(12,16,26,.88); backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,.14); border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.5);
+  }
+  .confirm-bar.hidden { display: none; }
+  .confirm-bar button { flex: 0 0 auto; padding: 8px 18px; font-size: 14px; }
+  .confirm-bar .primary { background: var(--accent); color: #231a05; }
+  .confirm-bar .cancel { background: rgba(255,255,255,.1); color: #e8ecf3; border: 1px solid var(--line); }
   .panel { flex: 0 1 300px; min-width: 260px; display: flex; flex-direction: column; gap: 14px; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
   .status { display: flex; align-items: center; gap: 12px; min-height: 30px; font-size: 16px; font-weight: 600; }
@@ -63,12 +75,34 @@
     flex: 1; padding: 10px 0; font-size: 15px; font-weight: 600;
     border: none; border-radius: 10px; cursor: pointer;
     background: var(--accent); color: #231a05;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
   }
   button.ghost { background: rgba(255,255,255,.08); color: #e8ecf3; border: 1px solid var(--line); }
   button:active { transform: translateY(1px); }
   .hint { font-size: 12px; color: #8b96a8; line-height: 1.7; }
   .moveinfo { font-size: 13px; color: #9aa5b5; }
   footer { margin-top: 22px; color: #77839a; font-size: 12px; line-height: 1.8; }
+
+  /* ---- 手机端适配 ---- */
+  @media (max-width: 720px) {
+    .app { padding: 12px 12px calc(24px + env(safe-area-inset-bottom)); }
+    header { margin-bottom: 10px; gap: 10px; }
+    header h1 { font-size: 20px; letter-spacing: 2px; }
+    header .sub { font-size: 11px; width: 100%; }
+    main { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 10px; }
+    .panel { display: contents; }              /* 面板子卡片直接参与主列布局 */
+    .board-wrap { flex: 0 0 auto; width: 100%; }
+    .panel > .card.status { order: -1; }       /* 状态栏置顶，随时可见轮到谁 */
+    .card { padding: 11px 14px; border-radius: 12px; }
+    .status { font-size: 15px; }
+    .scores .num { font-size: 18px; }
+    button { padding: 12px 0; font-size: 16px; }
+    .seg-btn { padding: 10px 0; font-size: 14px; }
+    .banner .text { font-size: 20px; padding: 12px 22px; }
+    .confirm-bar { bottom: 10px; }
+    .confirm-bar button { padding: 10px 20px; font-size: 15px; }
+    footer { font-size: 11px; margin-top: 14px; }
+  }
 </style>
 </head>
 <body>
@@ -83,6 +117,10 @@
       <div id="banner" class="banner hidden">
         <div class="text" id="banner-text"></div>
         <button id="banner-btn">再来一局</button>
+      </div>
+      <div id="confirm-bar" class="confirm-bar hidden">
+        <button id="confirm-place" class="primary">确认落子</button>
+        <button id="confirm-cancel" class="cancel">取消</button>
       </div>
     </div>
     <aside class="panel">
@@ -141,6 +179,8 @@
   var bannerEl = $('banner'), bannerText = $('banner-text');
   var moveInfo = $('moveinfo');
   var curLevel = 'medium', curSide = 'human';
+  var confirmBar = $('confirm-bar'), pendingCell = null;
+  var touchStart = null, lastTouchHandledAt = 0;
 
   var S = {
     board: G.createBoard(), history: [],
@@ -249,6 +289,17 @@
       ctx.fill();
     }
 
+    // 触摸点选预览（金色圆环）
+    if (pendingCell && !S.over && !S.thinking && S.turn === S.human &&
+        S.board[G.idx(pendingCell.x, pendingCell.y)] === EMPTY) {
+      drawStone(pendingCell.x, pendingCell.y, S.human, 0.55);
+      ctx.strokeStyle = 'rgba(240,180,41,.95)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(PAD + pendingCell.x * CELL, PAD + pendingCell.y * CELL, 19, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
     if (S.winCells) {
       ctx.save();
       ctx.strokeStyle = 'rgba(230,72,40,.9)';
@@ -289,15 +340,60 @@
     if (S.hover) { S.hover = null; render(); }
   });
   canvas.addEventListener('click', function (e) {
+    if (Date.now() - lastTouchHandledAt < 700) return; // 触摸路径已处理本次点选
     if (S.over || S.thinking || S.turn !== S.human) return;
     var p = evtPos(e);
     if (!p || S.board[G.idx(p.x, p.y)] !== EMPTY) return;
+    hideConfirmBar();
     doMove(p.x, p.y, S.human);
   });
+
+  /* 触摸两段式落子：第一次点选显示预览，再点同一点或按「确认落子」完成 */
+  function hideConfirmBar() {
+    confirmBar.classList.add('hidden');
+    pendingCell = null;
+  }
+
+  function handleTouchTap(p) {
+    if (S.over || S.thinking || S.turn !== S.human) { hideConfirmBar(); render(); return; }
+    if (!p || S.board[G.idx(p.x, p.y)] !== EMPTY) { hideConfirmBar(); render(); return; }
+    if (pendingCell && pendingCell.x === p.x && pendingCell.y === p.y) {
+      hideConfirmBar();
+      doMove(p.x, p.y, S.human);
+      return;
+    }
+    pendingCell = { x: p.x, y: p.y };
+    confirmBar.classList.remove('hidden');
+    render();
+  }
+
+  canvas.addEventListener('pointerdown', function (e) {
+    if (e.pointerType !== 'touch') return;
+    touchStart = { x: e.clientX, y: e.clientY, cell: evtPos(e) };
+  });
+  canvas.addEventListener('pointerup', function (e) {
+    if (e.pointerType !== 'touch' || !touchStart) return;
+    var dx = e.clientX - touchStart.x, dy = e.clientY - touchStart.y;
+    var cell = touchStart.cell;
+    touchStart = null;
+    lastTouchHandledAt = Date.now();
+    handleTouchTap((dx * dx + dy * dy) < 196 ? cell : null); // 位移 < 14px 视为点选
+  });
+
+  $('confirm-place').addEventListener('click', function () {
+    if (!pendingCell) return;
+    var c = pendingCell;
+    if (S.over || S.thinking || S.turn !== S.human || S.board[G.idx(c.x, c.y)] !== EMPTY) {
+      hideConfirmBar(); render(); return;
+    }
+    doMove(c.x, c.y, S.human);
+  });
+  $('confirm-cancel').addEventListener('click', function () { hideConfirmBar(); render(); });
 
   /* ---------------- 对局流程 ---------------- */
 
   function doMove(x, y, p) {
+    hideConfirmBar();
     S.board[G.idx(x, y)] = p;
     S.history.push({ x: x, y: y, p: p });
     S.lastMove = { x: x, y: y, p: p };
@@ -337,6 +433,7 @@
 
   function endGame(winner) {
     S.over = true;
+    hideConfirmBar();
     if (winner === 0) {
       scores.d++;
       bannerText.textContent = '🤝 平局';
@@ -358,6 +455,7 @@
 
   function newGame() {
     S.token++;
+    hideConfirmBar();
     S.board = G.createBoard();
     S.history = [];
     S.over = false; S.thinking = false; S.winCells = null;
@@ -377,6 +475,7 @@
     if (S.human === WHITE && S.history.length <= 1) return; // 只剩 AI 首手，无可悔
     S.token++;            // 取消进行中的 AI 计算
     S.thinking = false;
+    hideConfirmBar();
     if (S.history[S.history.length - 1].p === S.ai) S.history.pop();
     if (S.history.length && S.history[S.history.length - 1].p === S.human) S.history.pop();
 

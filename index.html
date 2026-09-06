@@ -631,7 +631,8 @@
       const r = await api('/api/room/' + online.code + '/move', { method: 'POST', body: { pid: online.pid, x: x, y: y }, timeout: 8000 });
       if (r.snapshot) applySnapshot(r.snapshot);
     } catch (e) {
-      if (e.message === 'not_your_turn') toast('还没轮到你');
+      if (e.message === 'http_404') { toast('房间已结束或过期'); leaveToLobby(); }
+      else if (e.message === 'not_your_turn') toast('还没轮到你');
       else if (e.message === 'game_over') toast('对局已结束');
       else toast('落子失败，请重试');
     }
@@ -743,6 +744,7 @@
 
   function newGame() {
     resetBoardState();
+    $('banner-btn').textContent = '再来一局';
     S.human = curSide === 'ai' ? WHITE : BLACK;
     S.ai = G.other(S.human);
     moveInfo.textContent = '对局开始';

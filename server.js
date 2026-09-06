@@ -55,8 +55,7 @@ function createRoom() {
     lastMove: null,
     version: 1,
     lastActive: Date.now(),
-    players: { black: null, white: null },
-    rematch: { black: false, white: false }
+    players: { black: null, white: null }
   };
   rooms.set(code, room);
   return room;
@@ -89,8 +88,7 @@ function snapshot(room) {
     roles: {
       black: room.players.black ? room.players.black.id : null,
       white: room.players.white ? room.players.white.id : null
-    },
-    rematch: { black: room.rematch.black, white: room.rematch.white }
+    }
   };
 }
 
@@ -114,13 +112,20 @@ function touch(room) {
   notify(room);
 }
 
+function notifyRoomGone(code) {
+  const set = waiters.get(code);
+  if (!set) return;
+  waiters.delete(code);
+  for (const w of set) send(w.res, 404, { error: 'room_not_found' });
+}
+
 function gcRooms() {
   const now = Date.now();
   for (const [code, room] of rooms) {
     const ttl = (room.players.black && room.players.white) ? ROOM_TTL_MS : LOBBY_TTL_MS;
     if (now - room.lastActive > ttl) {
       rooms.delete(code);
-      notify(room);
+      notifyRoomGone(code); // 让等待中的长轮询立即得知房间过期
     }
   }
 }
@@ -149,6 +154,7 @@ function serveStatic(req, res, pathname) {
   let p;
   try { p = decodeURIComponent(pathname); } catch (e) { res.writeHead(400); return res.end(); }
   if (p === '/') p = '/index.html';
+  if (p.split(/[\\/]/).some((seg) => seg.charAt(0) === '.')) { res.writeHead(403); return res.end(); } // 拒绝 .git 等点文件
   const file = path.join(ROOT, p);
   if (!file.startsWith(ROOT + path.sep)) { res.writeHead(403); return res.end(); }
   fs.readFile(file, (err, data) => {
@@ -269,7 +275,6 @@ function handleRematch(req, res, code) {
     room.winner = null;
     room.winCells = null;
     room.lastMove = null;
-    room.rematch = { black: false, white: false };
     touch(room);
     const mySeat = seatOf(room, body.pid);
     send(res, 200, { playerId: body.pid, role: mySeat, snapshot: snapshot(room) });

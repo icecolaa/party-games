@@ -42,6 +42,12 @@ async function main() {
     const r = await fetch(B + '/../../etc/passwd');
     assert.ok(r.status === 403 || r.status === 404, 'status=' + r.status);
   });
+  await t('点文件不被静态服务泄露', async () => {
+    for (const p of ['/.git/config', '/.gitignore', '/.pocketbay/x']) {
+      const r = await fetch(B + p);
+      assert.strictEqual(r.status, 403, p + ' status=' + r.status);
+    }
+  });
 
   console.log('— 房间流程 —');
   let code, blackPid, whitePid;
@@ -56,6 +62,8 @@ async function main() {
     const r = await api('/api/room/join', { method: 'POST', body: { code } });
     assert.strictEqual(r.json.role, 'white');
     whitePid = r.json.playerId;
+    assert.strictEqual(r.json.snapshot.blackOnline, true);
+    assert.strictEqual(r.json.snapshot.whiteOnline, true);
     const third = await api('/api/room/join', { method: 'POST', body: { code } });
     assert.strictEqual(third.status, 409);
     assert.strictEqual(third.json.error, 'room_full');

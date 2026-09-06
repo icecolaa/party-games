@@ -51,10 +51,11 @@ function sendJson(res, status, obj) {
   } catch (e) { /* 客户端已断开 */ }
 }
 
-/* 静态文件：拒绝点开头路径段，解析后必须仍位于 base 之内 */
+/* 静态文件：拒绝点开头路径段与 null 字节，解析后必须仍位于 base 之内 */
 function serveFile(res, base, relPath) {
   let p;
   try { p = decodeURIComponent(relPath); } catch (e) { res.writeHead(400); return res.end(); }
+  if (p.includes('\0')) { res.writeHead(400); return res.end(); }
   if (p.split(/[\\/]/).some((seg) => seg.charAt(0) === '.')) { res.writeHead(403); return res.end(); }
   const file = path.join(base, p);
   if (file !== base && !file.startsWith(base + path.sep)) { res.writeHead(403); return res.end(); }
@@ -120,4 +121,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { server, serveFile };
+module.exports = { server };

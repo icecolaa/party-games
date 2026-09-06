@@ -116,6 +116,12 @@ async function main() {
     assert.strictEqual(r.status, 404);
   });
 
+  await t('大厅包含两个游戏的入口链接', async () => {
+    const r = await get(port, '/');
+    assert.ok(r.text.includes('href="/gomoku/"'), 'missing /gomoku/ link');
+    assert.ok(r.text.includes('href="/poker/"'), 'missing /poker/ link');
+  });
+
   console.log('— 五子棋挂载 —');
 
   await t('/gomoku 301 重定向到 /gomoku/', async () => {
@@ -164,6 +170,12 @@ async function main() {
 
   console.log('— 德州扑克挂载 —');
 
+  await t('/poker 301 重定向到 /poker/', async () => {
+    const r = await get(port, '/poker');
+    assert.strictEqual(r.status, 301);
+    assert.strictEqual(r.headers.location, '/poker/');
+  });
+
   await t('/poker/ 返回德州页面', async () => {
     const r = await get(port, '/poker/');
     assert.strictEqual(r.status, 200);
@@ -191,6 +203,17 @@ async function main() {
     const msg = await ws.next();
     assert.strictEqual(msg.t, 'room');
     ws.close();
+  });
+
+  console.log('— 健壮性 —');
+
+  await t('null 字节 / 非法编码路径返回 400/404 且服务器存活', async () => {
+    for (const bad of ['/gomoku/%00', '/poker/%00', '/gomoku/%zz', '/gomoku/%00/x', '/%00']) {
+      const r = await get(port, bad);
+      assert.ok(r.status === 400 || r.status === 404, bad + ' -> ' + r.status);
+    }
+    const alive = await get(port, '/health');
+    assert.strictEqual(alive.status, 200, '服务器在恶意请求后应仍存活');
   });
 
   console.log(`\n结果: PASS ${passed} / FAIL ${failed}`);

@@ -21,7 +21,10 @@ const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=u
 /* ================= 静态文件 ================= */
 
 const server = http.createServer((req, res) => {
-  let p = decodeURIComponent((req.url || '/').split('?')[0]);
+  let p;
+  try { p = decodeURIComponent((req.url || '/').split('?')[0]); }
+  catch (e) { res.writeHead(400); res.end(); return; }
+  if (p.includes('\0')) { res.writeHead(400); res.end(); return; }
   if (p === '/') p = '/index.html';
   const file = path.join(root, p);
   if (!file.startsWith(root)) { res.writeHead(403); res.end(); return; }

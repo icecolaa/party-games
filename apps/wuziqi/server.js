@@ -153,6 +153,7 @@ function readBody(req) {
 function serveStatic(req, res, pathname) {
   let p;
   try { p = decodeURIComponent(pathname); } catch (e) { res.writeHead(400); return res.end(); }
+  if (p.includes('\0')) { res.writeHead(400); return res.end(); }
   if (p === '/') p = '/index.html';
   if (p.split(/[\\/]/).some((seg) => seg.charAt(0) === '.')) { res.writeHead(403); return res.end(); } // 拒绝 .git 等点文件
   const file = path.join(ROOT, p);

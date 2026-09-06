@@ -454,6 +454,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
 
 function uiShowGameOver(payload) {
   clearInterval(UI.continueTimer);
+  document.body.classList.remove('log-open'); // 终局面板不被日志抽屉遮挡
   payload = payload || {
     result: G.gameResult,
     winnerSeat: G.winner ? G.players.indexOf(G.winner) : -1,
@@ -568,6 +569,7 @@ function applyNetState(msg) {
   G.street = g.street; G.dealerIdx = g.dealerIdx; G.handNo = g.handNo;
   G.sb = g.sb; G.bb = g.bb; G.difficultyLabel = g.difficultyLabel;
   G.turnIdx = g.turnIdx; G.raisesThisStreet = g.raisesThisStreet || 0;
+  UI.humanP = G.players[NET.meIdx]; // 状态整体替换后同步预设引用，避免指向旧对象
   if (UI.seatEls.length !== g.players.length) buildTableOnce();
   UI.viewing = NET.meIdx;
   $('gameOverOverlay').classList.add('hidden');

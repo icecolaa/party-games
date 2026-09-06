@@ -185,6 +185,26 @@ console.log('[4] AI 难度档位');
   vm.runInContext('startGame({ total: 4, humanName: "T", startChips: 1000, bb: 20, difficulty: "hard" })', ctx);
   const hardDiff = vm.runInContext('G.players.filter(p => !p.isHuman).map(p => p.difficulty)', ctx);
   assert(hardDiff.every(d => d === 'hard'), '统一难度下所有 AI 档位应一致');
+
+  // 失误率生效：强制核心决策为弃牌时，新手应偶发失误跟注，困难档（blunder=0）不应
+  vm.runInContext(`
+    G.players = [Object.assign(newPlayer('T', true, 'x'), { bet: 0, chips: 1000 })];
+    G.currentBet = 100;
+    G.street = 'river';
+    window.__origCore = aiDecideCore;
+    aiDecideCore = function () { return { type: 'fold' }; }; // 强制必弃牌
+    const p = G.players[0];
+    let noviceCalls = 0, hardCalls = 0;
+    p.difficulty = 'novice';
+    for (let i = 0; i < 300; i++) if (aiDecide(p).type === 'call') noviceCalls++;
+    p.difficulty = 'hard';
+    for (let i = 0; i < 300; i++) if (aiDecide(p).type === 'call') hardCalls++;
+    window.__blunderStats = { noviceCalls, hardCalls };
+    aiDecideCore = window.__origCore; // 还原真实决策核心
+  `, ctx);
+  const bs = vm.runInContext('window.__blunderStats', ctx);
+  assert(bs.noviceCalls > 20, `新手 300 次必弃牌中应出现明显失误跟注，实际 ${bs.noviceCalls}`);
+  assert(bs.hardCalls === 0, `困难档失误率为 0，不应失误跟注，实际 ${bs.hardCalls}`);
 }
 
 /* ---------- 5. 引擎全流程模拟 ---------- */

@@ -168,6 +168,7 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   assert(!$('gameOverOverlay').classList.contains('hidden'), '终局弹窗应显示');
   assert($('goStandings').textContent.includes('你'), '积分榜应包含玩家');
   assert($('goTitle').textContent.includes('恭喜'), '获胜标题应正确');
+  assert(!document.body.classList.contains('log-open'), '终局弹窗应自动收起日志抽屉');
 
   // ---- T9 窄屏（手机）座位布局 ----
   console.log('[T9] 窄屏座位布局');

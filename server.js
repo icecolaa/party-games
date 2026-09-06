@@ -393,6 +393,9 @@ function handleMessage(conn, msg) {
     case 'action': {
       const room = conn.room;
       if (!room || !room.G) return;
+      // 僵尸连接校验：座位已被新连接认领后，旧连接不能再替其行动
+      const seat = room.seats[conn.seat];
+      if (!seat || seat.ws !== conn.socket) return;
       const entry = room.pending.get(conn.seat);
       if (!entry) return;
       const a = msg.a || {};

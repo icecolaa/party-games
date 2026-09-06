@@ -70,7 +70,19 @@ function positionBoost(p) {
   return pos > 0.55 ? 0.02 + 0.02 * pos : 0;
 }
 
+/* 对外入口：核心决策 + 低难度失误层（该弃牌时忍不住跟一下，松被动漏液） */
 function aiDecide(p) {
+  const decision = aiDecideCore(p);
+  const cfg = DIFF_CFG[normalizeDifficulty(p.difficulty || G.difficulty)];
+  const toCall = Math.min(Math.max(0, G.currentBet - p.bet), p.chips);
+  if (decision.type === 'fold' && toCall > 0 && toCall <= p.chips * 0.5 &&
+      Math.random() < cfg.blunder) {
+    return { type: 'call' }; // 失误跟注（不会为失误送上整栈）
+  }
+  return decision;
+}
+
+function aiDecideCore(p) {
   const diff = normalizeDifficulty(p.difficulty || G.difficulty);
   const cfg = DIFF_CFG[diff];
   const opps = G.players.filter(x => x.inHand && x !== p).length;

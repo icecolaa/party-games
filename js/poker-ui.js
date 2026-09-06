@@ -35,16 +35,12 @@ function backHTML() { return '<div class="card back"></div>'; }
 
 /* ---------- 桌面构建 ---------- */
 
-/* 视口模式：≤700px 走竖向紧凑椭圆（rx 小 ry 大），否则横向椭圆 */
+/* 视口模式：≤700px 走手机布局（你的座位在底部、对手排上方两排），否则环绕椭圆 */
 function isNarrowViewport() {
   try {
     if (typeof window.matchMedia === 'function') return window.matchMedia('(max-width: 700px)').matches;
   } catch (e) { /* 某些环境（如旧版 jsdom）不提供 matchMedia */ }
   return (window.innerWidth || 1024) <= 700;
-}
-
-function tableParams() {
-  return isNarrowViewport() ? { rx: 36, ry: 44 } : { rx: 41, ry: 37 };
 }
 
 /* 视口跨档时重建座位表；并同步 body.m-viewport 供样式与测试使用 */
@@ -64,7 +60,6 @@ function buildTableOnce() {
   tableEl.querySelectorAll('.bet-spot, .dealer-btn').forEach(e => e.remove());
 
   const L = Math.max(2, G.players.length);
-  const { rx, ry } = tableParams();
   const narrow = isNarrowViewport();
   const cx = 50, cy = 50;
   // 手机端：你的座位固定底部正中，其余玩家沿顶部弧线排开——公共牌区永远无遮挡
@@ -81,15 +76,16 @@ function buildTableOnce() {
       const row1Count = Math.ceil(oppCount / 2);
       let m, r, yy;
       if (oppCount <= 4) { m = oppCount; r = idx2; yy = 14; }
-      else if (idx2 < row1Count) { m = row1Count; r = idx2; yy = 9; }
-      else { m = oppCount - row1Count; r = idx2 - row1Count; yy = 27; }
+      else if (idx2 < row1Count) { m = row1Count; r = idx2; yy = 10; }
+      else { m = oppCount - row1Count; r = idx2 - row1Count; yy = 30; }
       const spacing = Math.min(22, 88 / m);
       x = 50 + (r - (m - 1) / 2) * spacing;
       y = yy;
     } else {
+      // 桌面/平板：环绕椭圆（横排）
       const ang = (90 + i * 360 / L) * Math.PI / 180;
-      x = cx + rx * Math.cos(ang);
-      y = cy + ry * Math.sin(ang);
+      x = cx + 41 * Math.cos(ang);
+      y = cy + 37 * Math.sin(ang);
     }
 
     const seat = document.createElement('div');

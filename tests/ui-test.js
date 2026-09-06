@@ -189,12 +189,25 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   }
   // 回归：任何座位铭牌都不得与中央公共牌区重叠（老法师/鲨鱼哥挡牌问题）
   const board = { x1: 22, x2: 78, y1: 40, y2: 60 }; // 手机公共牌区估算范围
+  const plateRects = [];
   for (let i = 0; i < UI.seatEls.length; i++) {
     const left = parseFloat(UI.seatEls[i].style.left);
     const top = parseFloat(UI.seatEls[i].style.top);
-    const overlap = left - 10.8 < board.x2 && left + 10.8 > board.x1 &&
-                    top - 6 < board.y2 && top + 6 > board.y1;
-    assert(!overlap, `座位${i} 铭牌 (${left.toFixed(1)},${top.toFixed(1)}) 不应遮挡公共牌区`);
+    const rect = { x1: left - 10.8, x2: left + 10.8, y1: top - 6, y2: top + 6, left, top };
+    plateRects.push(rect);
+    const overlapBoard = rect.x1 < board.x2 && rect.x2 > board.x1 &&
+                         rect.y1 < board.y2 && rect.y2 > board.y1;
+    assert(!overlapBoard, `座位${i} 铭牌 (${left.toFixed(1)},${top.toFixed(1)}) 不应遮挡公共牌区`);
+  }
+  // 回归：同一排的相邻座位铭牌不得互相重叠（间距 22% vs 铭牌宽 21.5%）
+  for (let i = 0; i < plateRects.length; i++) {
+    for (let j = i + 1; j < plateRects.length; j++) {
+      const a = plateRects[i], b = plateRects[j];
+      if (Math.abs(a.top - b.top) < 1) { // 视为同一排
+        const noOverlap = a.x2 <= b.x1 + 0.5 || b.x2 <= a.x1 + 0.5;
+        assert(noOverlap, `同排座位${i}/${j} 铭牌不应互相重叠`);
+      }
+    }
   }
   const xs = UI.seatEls.map(el => parseFloat(el.style.left));
   const narrowSpan = Math.max(...xs) - Math.min(...xs);

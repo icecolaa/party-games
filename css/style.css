@@ -376,7 +376,8 @@ button, input[type="range"] { touch-action: manipulation; }
   /* 漂浮的下注/庄家元素停用：改为吸附在铭牌上，杜绝遮挡公共牌 */
   .bet-spot, .dealer-btn { display: none !important; }
   .p-dealer.on {
-    display: block; width: 16px; height: 16px; line-height: 16px;
+    display: block; position: absolute;
+    width: 16px; height: 16px; line-height: 16px;
     top: -6px; right: -4px; font-size: 9px;
     background: #f4f4f4; color: #222; border-radius: 50%;
     text-align: center; font-weight: 900;
@@ -384,9 +385,12 @@ button, input[type="range"] { touch-action: manipulation; }
   }
   .p-bet.on { display: block; color: #ffd76a; font-size: 10px; font-weight: 700; margin-top: 0; }
 
-  /* 座位（紧凑铭牌：一排最多 4 个） */
+  /* 座位（紧凑铭牌：一排最多 4 个）；对手牌背略缩，保证两排之间留出间隙 */
   .seat { width: 104px; gap: 2px; }
-  .seat .cards { gap: 2px; min-height: 44px; }
+  .seat .cards { gap: 2px; min-height: 40px; }
+  .seat .card { width: 27px; height: 38px; border-radius: 4px; }
+  .seat .card .cr { font-size: 8px; top: 1px; left: 3px; }
+  .seat .card .cs { font-size: 13px; }
   .plate { min-width: 84px; padding: 3px 5px; border-radius: 8px; }
   .p-top { font-size: 10.5px; gap: 3px; }
   .p-chips { font-size: 10px; margin-top: 0; }

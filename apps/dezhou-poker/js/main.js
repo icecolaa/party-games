@@ -122,7 +122,9 @@ function bindSetup() {
 
 function defaultNetAddr() {
   if (location.protocol === 'http:' || location.protocol === 'https:') {
-    return (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
+    // /poker/ws：统一入口服务器按此前缀把 WebSocket 转给本游戏；
+    // 独立部署的德州服务器不校验升级路径，同样兼容
+    return (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/poker/ws';
   }
   return 'ws://127.0.0.1:8899';
 }

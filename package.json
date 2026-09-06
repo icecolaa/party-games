@@ -6,7 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node apps/wuziqi/test.js && node apps/wuziqi/test-mp.js && node apps/dezhou-poker/tests/poker-test.js && node apps/dezhou-poker/tests/net-e2e.js"
+    "test": "node apps/wuziqi/test.js && node apps/wuziqi/test-mp.js && node apps/dezhou-poker/tests/poker-test.js && node apps/dezhou-poker/tests/net-e2e.js && node tests/smoke.js"
   },
   "engines": {
     "node": ">=18"

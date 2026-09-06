@@ -590,7 +590,7 @@
 
   async function createRoom() {
     try {
-      const r = await api('/api/room/create', { method: 'POST', body: {} });
+      const r = await api('api/room/create', { method: 'POST', body: {} });
       enterRoom(r);
       toast('房间已创建，把房码「' + r.code + '」分享给好友');
     } catch (e) { toast('创建失败：' + e.message); }
@@ -598,7 +598,7 @@
 
   async function joinRoom(code, pid, silent) {
     try {
-      const r = await api('/api/room/join', { method: 'POST', body: { code: code, pid: pid || undefined } });
+      const r = await api('api/room/join', { method: 'POST', body: { code: code, pid: pid || undefined } });
       enterRoom(r);
     } catch (e) {
       var msg = e.message === 'room_full' ? '房间已满（已有两位玩家）'
@@ -695,7 +695,7 @@
         const timer = setTimeout(function () { ctrl.abort(); }, 32000);
         let res;
         try {
-          res = await fetch('/api/room/' + online.code + '/state?v=' + online.version + '&pid=' + encodeURIComponent(online.pid), { signal: ctrl.signal });
+          res = await fetch('api/room/' + online.code + '/state?v=' + online.version + '&pid=' + encodeURIComponent(online.pid), { signal: ctrl.signal });
         } finally { clearTimeout(timer); }
         if (res.status === 404) { toast('房间已结束或过期'); leaveToLobby(); break; }
         const s = await res.json();
@@ -712,7 +712,7 @@
 
   async function onlineMove(x, y) {
     try {
-      const r = await api('/api/room/' + online.code + '/move', { method: 'POST', body: { pid: online.pid, x: x, y: y }, timeout: 8000 });
+      const r = await api('api/room/' + online.code + '/move', { method: 'POST', body: { pid: online.pid, x: x, y: y }, timeout: 8000 });
       if (r.snapshot) applySnapshot(r.snapshot);
     } catch (e) {
       if (e.message === 'http_404') { toast('房间已结束或过期'); leaveToLobby(); }
@@ -724,7 +724,7 @@
 
   async function rematch() {
     try {
-      const r = await api('/api/room/' + online.code + '/rematch', { method: 'POST', body: { pid: online.pid } });
+      const r = await api('api/room/' + online.code + '/rematch', { method: 'POST', body: { pid: online.pid } });
       if (r.role) {
         online.role = r.role;
         try { sessionStorage.setItem('gomoku_online_seat', JSON.stringify({ code: online.code, pid: online.pid, role: r.role })); } catch (e) {}

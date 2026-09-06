@@ -281,6 +281,24 @@ function handleRematch(req, res, code) {
   }).catch((e) => send(res, 400, { error: e.message }));
 }
 
+/* ---------------- API ---------------- */
+/* 处理 API 路由（pathname 为去掉挂载前缀后的路径，如 /api/room/CODE/move）。
+ * 命中并处理返回 true；未命中返回 false，由调用方决定后续（静态托管 / 404）。
+ * 独立运行（node server.js）与被统一入口服务器挂载时共用本函数。 */
+function handleApi(req, res, pathname, url) {
+  let m;
+  if (pathname === '/health' || pathname === '/api/health' || pathname === '/healthz') {
+    send(res, 200, { ok: true, rooms: rooms.size });
+    return true;
+  }
+  if (pathname === '/api/room/create' && req.method === 'POST') { handleCreate(req, res); return true; }
+  if (pathname === '/api/room/join' && req.method === 'POST') { handleJoin(req, res); return true; }
+  if ((m = pathname.match(/^\/api\/room\/([A-Z0-9]{4})\/move$/)) && req.method === 'POST') { handleMove(req, res, m[1]); return true; }
+  if ((m = pathname.match(/^\/api\/room\/([A-Z0-9]{4})\/rematch$/)) && req.method === 'POST') { handleRematch(req, res, m[1]); return true; }
+  if ((m = pathname.match(/^\/api\/room\/([A-Z0-9]{4})\/state$/)) && req.method === 'GET') { handleState(req, res, m[1], url); return true; }
+  return false;
+}
+
 /* ---------------- 服务器 ---------------- */
 
 function handler(req, res) {
@@ -288,16 +306,7 @@ function handler(req, res) {
   try { url = new URL(req.url, 'http://localhost'); } catch (e) { res.writeHead(400); return res.end(); }
   const p = url.pathname;
 
-  if (p === '/health' || p === '/api/health' || p === '/healthz') {
-    return send(res, 200, { ok: true, rooms: rooms.size });
-  }
-
-  let m;
-  if (p === '/api/room/create' && req.method === 'POST') return handleCreate(req, res);
-  if (p === '/api/room/join' && req.method === 'POST') return handleJoin(req, res);
-  if ((m = p.match(/^\/api\/room\/([A-Z0-9]{4})\/move$/)) && req.method === 'POST') return handleMove(req, res, m[1]);
-  if ((m = p.match(/^\/api\/room\/([A-Z0-9]{4})\/rematch$/)) && req.method === 'POST') return handleRematch(req, res, m[1]);
-  if ((m = p.match(/^\/api\/room\/([A-Z0-9]{4})\/state$/)) && req.method === 'GET') return handleState(req, res, m[1], url);
+  if (handleApi(req, res, p, url)) return;
 
   if (req.method === 'GET' || req.method === 'HEAD') return serveStatic(req, res, p);
 
@@ -318,4 +327,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { buildServer };
+module.exports = { buildServer, handleApi };

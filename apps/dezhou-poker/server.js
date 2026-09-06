@@ -473,7 +473,9 @@ function onConnClose(conn) {
 
 /* ================= 启动 ================= */
 
-server.on('upgrade', (req, socket) => {
+/* WebSocket 升级处理：独立运行时监听本服务器的所有升级请求；
+ * 被统一入口服务器挂载时，由入口按路径前缀（/poker/*）转发过来。 */
+function handleUpgrade(req, socket) {
   const key = req.headers['sec-websocket-key'];
   if (!key || req.headers.upgrade?.toLowerCase() !== 'websocket') { socket.destroy(); return; }
   socket.write(
@@ -485,10 +487,12 @@ server.on('upgrade', (req, socket) => {
   socket.setNoDelay(true);
   const conn = { socket, room: null, seat: -1 };
   wsAttach(socket, t => onWsMessage(conn, t), () => onConnClose(conn));
-});
+}
+
+server.on('upgrade', handleUpgrade);
 
 if (require.main === module) {
   server.listen(port, () => console.log(`智能德州扑克服务器已启动: http://127.0.0.1:${port}/`));
 }
 
-module.exports = { server, rooms };
+module.exports = { server, rooms, handleUpgrade };

@@ -311,12 +311,47 @@
     return r ? { x: r.move[0], y: r.move[1], score: r.score } : null;
   }
 
+  /* ---------------- 教练辅助（棋型识别 / 成五点计算） ---------------- */
+
+  // (x,y) 已含 p 的落子：按四方向统计棋型（供教练点评使用）
+  function shapeCounts(board, x, y, p) {
+    var c = { five: 0, liveFour: 0, rushFour: 0, liveThree: 0, sleepThree: 0, liveTwo: 0 };
+    for (var d = 0; d < DIRS.length; d++) {
+      var s = dirWindow(board, x, y, DIRS[d][0], DIRS[d][1], p);
+      var kind = 'none';
+      if (s.indexOf('11111') !== -1) kind = 'five';
+      else if (s.indexOf('011110') !== -1) kind = 'liveFour';
+      else if (s.indexOf('11110') !== -1 || s.indexOf('01111') !== -1 || s.indexOf('11011') !== -1 || s.indexOf('10111') !== -1 || s.indexOf('11101') !== -1) kind = 'rushFour';
+      else if (s.indexOf('01110') !== -1 || s.indexOf('010110') !== -1 || s.indexOf('011010') !== -1) kind = 'liveThree';
+      else if (s.indexOf('001100') !== -1 || s.indexOf('011000') !== -1 || s.indexOf('000110') !== -1 || s.indexOf('010100') !== -1 || s.indexOf('001010') !== -1 || s.indexOf('010010') !== -1) kind = 'liveTwo';
+      else if (s.indexOf('10011') !== -1 || s.indexOf('11001') !== -1 || s.indexOf('10101') !== -1 || s.indexOf('11100') !== -1 || s.indexOf('00111') !== -1 || s.indexOf('11010') !== -1 || s.indexOf('01011') !== -1) kind = 'sleepThree';
+      if (c[kind] !== undefined) c[kind]++;
+    }
+    return c;
+  }
+
+  // p 再走一步即成五的全部空点（复用真实胜负判定）
+  function fivePoints(board, p) {
+    var pts = [];
+    for (var y = 0; y < SIZE; y++) {
+      for (var x = 0; x < SIZE; x++) {
+        if (board[idx(x, y)] !== EMPTY) continue;
+        board[idx(x, y)] = p;
+        var hit = hasWon(board, x, y);
+        board[idx(x, y)] = EMPTY;
+        if (hit) pts.push({ x: x, y: y });
+      }
+    }
+    return pts;
+  }
+
   var GomokuAI = {
     SIZE: SIZE, EMPTY: EMPTY, BLACK: BLACK, WHITE: WHITE,
     idx: idx, inBoard: inBoard, other: other,
     createBoard: createBoard,
     getWinLine: getWinLine, hasWon: hasWon, isBoardFull: isBoardFull,
     scorePoint: scorePoint, evalFor: evalFor,
+    shapeCounts: shapeCounts, fivePoints: fivePoints,
     bestMove: bestMove
   };
 

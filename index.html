@@ -759,7 +759,6 @@
     if (csSaved && typeof csSaved.w === 'number' && typeof csSaved.l === 'number') coachStats = csSaved;
   } catch (e) {}
   var coachHistory = [], praiseIndex = 0;
-  var COACH_DIRS = [[1, 0], [0, 1], [1, 1], [1, -1]];
   var COACH_PRAISE = [
     '这手棋很有想法，继续保持！',
     '不错，你已经会主动创造威胁了。',
@@ -796,43 +795,9 @@
   function coachToggleLabel() { $('coach-toggle').textContent = coachEnabled ? '提示：开' : '提示：关'; }
   coachLog('🎓 教练已上线：实时提醒你避开大坑、点评好棋，输了帮你复盘找败因。');
 
-  var COACH_SHAPES = [
-    ['11111', 'five'],
-    ['011110', 'liveFour'],
-    ['11110', 'rushFour'], ['01111', 'rushFour'], ['11011', 'rushFour'], ['10111', 'rushFour'], ['11101', 'rushFour'],
-    ['01110', 'liveThree'], ['010110', 'liveThree'], ['011010', 'liveThree'],
-    ['001100', 'liveTwo'], ['011000', 'liveTwo'], ['000110', 'liveTwo'],
-    ['010100', 'liveTwo'], ['001010', 'liveTwo'], ['010010', 'liveTwo'],
-    ['10011', 'sleepThree'], ['11001', 'sleepThree'], ['10101', 'sleepThree'],
-    ['11100', 'sleepThree'], ['00111', 'sleepThree'], ['11010', 'sleepThree'], ['01011', 'sleepThree']
-  ];
-
-  function coachClassifyDir(board, x, y, dx, dy, p) {
-    var s = '';
-    for (var i = -4; i <= 4; i++) {
-      if (i === 0) { s += '1'; continue; }
-      var nx = x + dx * i, ny = y + dy * i;
-      if (!G.inBoard(nx, ny)) { s += '2'; continue; }
-      var v = board[G.idx(nx, ny)];
-      s += v === EMPTY ? '0' : (v === p ? '1' : '2');
-    }
-    for (var k = 0; k < COACH_SHAPES.length; k++) {
-      if (s.indexOf(COACH_SHAPES[k][0]) !== -1) return COACH_SHAPES[k][1];
-    }
-    return 'none';
-  }
-
-  // 落子后（board 已含该子）按方向统计棋型
-  function coachShape(board, x, y, p) {
-    var c = { five: 0, liveFour: 0, rushFour: 0, liveThree: 0, sleepThree: 0, liveTwo: 0 };
-    for (var d = 0; d < COACH_DIRS.length; d++) {
-      var kind = coachClassifyDir(board, x, y, COACH_DIRS[d][0], COACH_DIRS[d][1], p);
-      if (c[kind] !== undefined) c[kind]++;
-    }
-    return c;
-  }
-
-  function coachShapeText(c) {
+  // 棋型识别与成五点计算复用 ai.js（shapeCounts / fivePoints），保证与引擎判定一致
+  function coachShapeText(board, x, y, p) {
+    var c = G.shapeCounts(board, x, y, p);
     if (c.five) return { key: 'five', text: '成五！一锤定音。' };
     if (c.liveFour) return { key: 'liveFour', text: '活四已成，两个成五点防不住！' };
     if (c.rushFour >= 2) return { key: 'doubleRush', text: '双冲四，两头都是杀点。' };
@@ -845,36 +810,16 @@
     return null;
   }
 
-  // p 再走一步即成五的全部点位
+  // p 再走一步即成五的全部点位（复用 ai.js 真实胜负判定）
   function coachFivePoints(board, p) {
-    var pts = [];
-    for (var y = 0; y < N; y++) {
-      for (var x = 0; x < N; x++) {
-        if (board[G.idx(x, y)] !== EMPTY) continue;
-        var hit = false;
-        for (var d = 0; d < COACH_DIRS.length && !hit; d++) {
-          var s = '';
-          for (var i = -4; i <= 4; i++) {
-            if (i === 0) { s += '1'; continue; }
-            var nx = x + COACH_DIRS[d][0] * i, ny = y + COACH_DIRS[d][1] * i;
-            if (!G.inBoard(nx, ny)) { s += '2'; continue; }
-            var v = board[G.idx(nx, ny)];
-            s += v === EMPTY ? '0' : (v === p ? '1' : '2');
-          }
-          if (s.indexOf('11111') !== -1) hit = true;
-        }
-        if (hit) pts.push({ x: x, y: y });
-      }
-    }
-    return pts;
+    return G.fivePoints(board, p);
   }
 
   // 玩家（或联机中自己）落子后点评；board 为落子后的棋盘
   function coachOnPlayerMove(x, y, preMyWins, preOppWins, board) {
     if (!coachEnabled) return;
     var p = board[G.idx(x, y)];
-    var shape = coachShape(board, x, y, p);
-    var st = coachShapeText(shape);
+    var st = coachShapeText(board, x, y, p);
     if (preMyWins.length) {
       coachLog('💡 复盘提示：其实你有直接取胜点（' + coordName(preMyWins[0].x, preMyWins[0].y) + '）——下次落子前先看看自己能不能连五。', 'warn');
       return;
@@ -895,7 +840,6 @@
   function coachOnOpponentMove(x, y, board) {
     if (!coachEnabled) return;
     var p = board[G.idx(x, y)];
-    var shape = coachShape(board, x, y, p);
     var pts = coachFivePoints(board, p);
     if (shape.liveFour) {
       coachLog('🤖 对方在 ' + coordName(x, y) + ' 做出活四，除非你马上成五，否则难救。', 'warn');

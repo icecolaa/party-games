@@ -101,6 +101,31 @@ t('执白同样必挡对方冲四', () => {
   assert.deepStrictEqual([mv.x, mv.y], [7, 7], JSON.stringify(mv));
 });
 
+console.log('— 教练辅助（shapeCounts / fivePoints）—');
+t('fivePoints：活四两点、缺口四一点、两端被堵为零', () => {
+  const open4 = mk([[4, 7, B], [5, 7, B], [6, 7, B], [7, 7, B]]);
+  assert.strictEqual(G.fivePoints(open4, B).length, 2);
+  const gap4 = mk([[4, 7, B], [5, 7, B], [6, 7, B], [8, 7, B]]);
+  const gp = G.fivePoints(gap4, B);
+  assert.strictEqual(gp.length, 1);
+  assert.deepStrictEqual([gp[0].x, gp[0].y], [7, 7]);
+  const blocked = mk([[2, 7, W], [3, 7, W], [4, 7, B], [5, 7, B], [6, 7, B], [7, 7, B], [8, 7, W]]);
+  assert.strictEqual(G.fivePoints(blocked, B).length, 0);
+});
+t('shapeCounts：活三 / 冲四 / 双活三识别', () => {
+  const live3 = mk([[5, 7, B], [6, 7, B], [7, 7, B]]);
+  const c1 = G.shapeCounts(live3, 5, 7, B);
+  assert.strictEqual(c1.liveThree, 1);
+  assert.strictEqual(c1.rushFour, 0);
+  const rush = mk([[4, 7, B], [5, 7, B], [8, 7, B]]);
+  const c2 = G.shapeCounts(rush, 7, 7, B);
+  assert.strictEqual(c2.rushFour, 1);
+  assert.strictEqual(c2.liveThree, 0);
+  const dbl = mk([[5, 7, B], [6, 7, B], [7, 5, B], [7, 6, B]]);
+  const c3 = G.shapeCounts(dbl, 7, 7, B);
+  assert.strictEqual(c3.liveThree, 2);
+});
+
 console.log('— 对局模拟 —');
 function selfPlay(lb, lw, maxMoves) {
   const b = G.createBoard();

@@ -33,7 +33,7 @@
   .banner.hidden { display: none; }
   .banner .text {
     pointer-events: auto;
-    background: rgba(12,16,26,.85); backdrop-filter: blur(6px);
+    background: #10141d; /* 实色：避免 iOS 对半透明+backdrop-filter 的画丢问题（同确认条） */
     border: 1px solid rgba(255,255,255,.14); border-radius: 16px;
     padding: 16px 34px; font-size: 28px; font-weight: 800;
     box-shadow: 0 14px 40px rgba(0,0,0,.55);
@@ -49,7 +49,7 @@
   }
   .confirm-bar.hidden { display: none; }
   .confirm-hint {
-    position: absolute; left: 50%; bottom: 64px; transform: translateX(-50%);
+    position: absolute; left: 50%; bottom: 82px; transform: translateX(-50%);
     width: max-content; max-width: calc(100vw - 24px);
     background: rgba(15,20,30,.94); border-radius: 10px; padding: 7px 14px;
     font-size: 13px; text-align: center; pointer-events: none;
@@ -456,10 +456,12 @@
       txt = '🏁 这手直接成五获胜！'; cls = 'good';
     } else {
       var oppPts = coachFivePoints(b2, opp);
-      if (oppPts.length) { txt = '⚠️ 走这里后，对方在 ' + coordName(oppPts[0].x, oppPts[0].y) + ' 一步成五！'; cls = 'warn'; }
+      if (oppPts.length >= 2) { txt = '⚠️ 走这里后，对方在 ' + coordName(oppPts[0].x, oppPts[0].y) + ' / ' + coordName(oppPts[1].x, oppPts[1].y) + ' 两处都能成五！'; cls = 'warn'; }
+      else if (oppPts.length) { txt = '⚠️ 走这里后，对方在 ' + coordName(oppPts[0].x, oppPts[0].y) + ' 一步成五！'; cls = 'warn'; }
       else {
         var myPts = coachFivePoints(b2, S.human);
-        if (myPts.length) { txt = '💡 好点位：这手之后，你下步在 ' + coordName(myPts[0].x, myPts[0].y) + ' 成五！'; cls = 'good'; }
+        if (myPts.length >= 2) { txt = '🔥 活四！下步在 ' + coordName(myPts[0].x, myPts[0].y) + ' 或 ' + coordName(myPts[1].x, myPts[1].y) + ' 成五！'; cls = 'good'; }
+        else if (myPts.length) { txt = '💡 好点位：这手之后，你下步在 ' + coordName(myPts[0].x, myPts[0].y) + ' 成五！'; cls = 'good'; }
       }
     }
     if (txt) { confirmHint.textContent = txt; confirmHint.className = 'confirm-hint ' + cls; }
@@ -787,6 +789,7 @@
     coachEnabled = !coachEnabled;
     try { localStorage.setItem('gomoku_coach', coachEnabled ? '1' : '0'); } catch (e) {}
     coachToggleLabel();
+    if (pendingCell) updateConfirmHint(); // 开关切换时同步刷新当前预览的提示
     coachLog(coachEnabled ? '🎓 教练已上线，落子前会帮你避开大坑。' : '教练实时提示已关闭，终局复盘仍会保留。');
   });
   coachToggleLabel();

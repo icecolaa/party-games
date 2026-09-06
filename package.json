@@ -16,7 +16,7 @@
   "author": "ice-colaa",
   "license": "MIT",
   "type": "commonjs",
-  "dependencies": {
+  "devDependencies": {
     "jsdom": "^30.0.1"
   }
 }

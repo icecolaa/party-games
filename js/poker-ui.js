@@ -256,13 +256,19 @@ function updateEquityBadge() {
   }
 }
 
+let eqMemoKey = ''; // 胜率计算的输入指纹（手牌|公共牌|对手数|跟注额|街）
+
 function computeHumanEquity(p) {
   const badge = $('equityBadge');
-  if (!$('equityToggle').checked || p.folded || p.hole.length !== 2) { badge.textContent = ''; return; }
+  if (!$('equityToggle').checked || p.folded || p.hole.length !== 2) { badge.textContent = ''; eqMemoKey = ''; return; }
   const opps = G.players.filter(x => x.inHand && x !== p).length;
-  if (opps <= 0) { badge.textContent = ''; return; }
-  const eq = estimateEquity(p.hole, G.board, opps, 2200);
+  if (opps <= 0) { badge.textContent = ''; eqMemoKey = ''; return; }
   const toCall = Math.max(0, G.currentBet - p.bet);
+  // 输入不变时跳过重算：联网模式每次广播都会触发渲染，蒙特卡洛不能白跑
+  const key = [p.hole.join(','), G.board.join(','), opps, toCall, G.street].join('|');
+  if (key === eqMemoKey && badge.textContent) return;
+  eqMemoKey = key;
+  const eq = estimateEquity(p.hole, G.board, opps, 2200);
   let extra = '';
   if (toCall > 0) extra = ' ｜ 跟注需 ' + (toCall / (G.pot + toCall) * 100).toFixed(0) + '%';
   badge.textContent = `我的胜率 ≈ ${Math.round(eq * 100)}%${extra}`;

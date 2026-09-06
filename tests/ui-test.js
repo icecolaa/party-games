@@ -221,6 +221,13 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
     assert(ownBox.querySelectorAll('.card.own').length === 2, 'ownCards 应有 2 张带 own 样式的牌');
     const seatCards = UI.seatEls[0].querySelectorAll('.card');
     assert(seatCards.length === 0, '窄屏下自己座位里不应再画小牌');
+    // 弃牌后 ownCards 应回收，不显示已弃的手牌
+    G.players[0].folded = true;
+    window.renderAll();
+    assert(ownBox.style.display === 'none', '弃牌后 ownCards 应隐藏');
+    G.players[0].folded = false;
+    window.renderAll();
+    assert(ownBox.style.display === 'flex', '恢复未弃牌状态后应重新显示');
   } else {
     assert(ownBox.style.display === 'none', '无可用底牌时 ownCards 应隐藏');
   }

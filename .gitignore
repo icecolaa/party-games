@@ -1,0 +1,13 @@
+# 依赖/日志
+node_modules/
+package-lock.json
+*.log
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# 部署产物
+*.zip
+*.tar.gz

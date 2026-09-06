@@ -1,0 +1,20 @@
+{
+  "name": "party-games",
+  "version": "1.0.0",
+  "private": true,
+  "description": "聚会游戏合集：游戏大厅 + 五子棋 + 德州扑克（规划中：摇色子、麻将、斗地主、飞行棋、石头剪刀布）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node apps/wuziqi/test.js && node apps/wuziqi/test-mp.js && node apps/dezhou-poker/tests/poker-test.js && node apps/dezhou-poker/tests/net-e2e.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitee.com/ice-colaa/party-games.git"
+  },
+  "author": "ice-colaa",
+  "license": "MIT"
+}

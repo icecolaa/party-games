@@ -47,6 +47,15 @@
     box-shadow: 0 10px 30px rgba(0,0,0,.5);
   }
   .confirm-bar.hidden { display: none; }
+  .confirm-hint {
+    position: absolute; left: 50%; bottom: 64px; transform: translateX(-50%);
+    background: rgba(15,20,30,.94); border-radius: 10px; padding: 7px 14px;
+    font-size: 13px; max-width: 88%; text-align: center; pointer-events: none;
+    border: 1px solid rgba(255,255,255,.18);
+  }
+  .confirm-hint.hidden { display: none; }
+  .confirm-hint.warn { border-color: rgba(230,126,34,.6); color: #f5c98a; }
+  .confirm-hint.good { border-color: rgba(46,204,113,.6); color: #b8ead0; }
   .confirm-bar button { flex: 0 0 auto; padding: 8px 18px; font-size: 14px; position: relative; z-index: 1; }
   .confirm-bar .primary { background: var(--accent); color: #231a05; }
   /* 取消按钮必须用实色：iOS WebView 下半透明背景在 backdrop-filter 父层内会被画丢 */
@@ -152,6 +161,7 @@
         <div class="text" id="banner-text"></div>
         <button id="banner-btn">再来一局</button>
       </div>
+      <div id="confirm-hint" class="confirm-hint hidden"></div>
       <div id="confirm-bar" class="confirm-bar hidden">
         <button id="confirm-place" class="primary">确认落子</button>
         <button id="confirm-cancel" class="cancel">取消</button>
@@ -257,7 +267,7 @@
   var aiSettings = $('ai-settings'), onlineCard = $('online-card');
   var online = { code: null, pid: null, role: null, version: 0 };
   var polling = false, overAnnouncedVersion = -1, toastTimer = null;
-  var confirmBar = $('confirm-bar'), pendingCell = null;
+  var confirmBar = $('confirm-bar'), confirmHint = $('confirm-hint'), pendingCell = null;
   var touchStart = null, lastTouchHandledAt = 0;
 
   var S = {
@@ -429,7 +439,29 @@
   /* 触摸两段式落子：第一次点选显示预览，再点同一点或按「确认落子」完成 */
   function hideConfirmBar() {
     confirmBar.classList.add('hidden');
+    confirmHint.classList.add('hidden');
     pendingCell = null;
+  }
+
+  // 点选后、确认前的实时提示：这手是否成五 / 送对方成五点 / 创造成五点
+  function updateConfirmHint() {
+    if (!pendingCell || !coachEnabled) { confirmHint.classList.add('hidden'); return; }
+    var b2 = S.board.slice();
+    b2[G.idx(pendingCell.x, pendingCell.y)] = S.human;
+    var opp = G.other(S.human);
+    var txt = null, cls = '';
+    if (G.getWinLine(b2, pendingCell.x, pendingCell.y)) {
+      txt = '🏁 这手直接成五获胜！'; cls = 'good';
+    } else {
+      var oppPts = coachFivePoints(b2, opp);
+      if (oppPts.length) { txt = '⚠️ 走这里后，对方在 ' + coordName(oppPts[0].x, oppPts[0].y) + ' 一步成五！'; cls = 'warn'; }
+      else {
+        var myPts = coachFivePoints(b2, S.human);
+        if (myPts.length) { txt = '💡 好点位：这手之后，你下步在 ' + coordName(myPts[0].x, myPts[0].y) + ' 成五！'; cls = 'good'; }
+      }
+    }
+    if (txt) { confirmHint.textContent = txt; confirmHint.className = 'confirm-hint ' + cls; }
+    else confirmHint.classList.add('hidden');
   }
 
   function handleTouchTap(p) {
@@ -441,6 +473,7 @@
       return;
     }
     pendingCell = { x: p.x, y: p.y };
+    updateConfirmHint();
     confirmBar.classList.remove('hidden');
     render();
   }

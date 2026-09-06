@@ -9,4 +9,5 @@ node_modules/
 
 # 部署产物
 pocketbay-deploy.zip
+pocketbay-deploy.tar.gz
 wuziqi-standalone.html

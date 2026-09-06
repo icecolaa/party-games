@@ -721,7 +721,7 @@
     var csSaved = JSON.parse(localStorage.getItem('gomoku_coach_stats') || 'null');
     if (csSaved && typeof csSaved.w === 'number' && typeof csSaved.l === 'number') coachStats = csSaved;
   } catch (e) {}
-  var coachHistory = [], praiseIndex = 0, toastCoachTimer = null;
+  var coachHistory = [], praiseIndex = 0;
   var COACH_DIRS = [[1, 0], [0, 1], [1, 1], [1, -1]];
   var COACH_PRAISE = [
     '这手棋很有想法，继续保持！',
@@ -751,11 +751,11 @@
   $('coach-toggle').addEventListener('click', function () {
     coachEnabled = !coachEnabled;
     try { localStorage.setItem('gomoku_coach', coachEnabled ? '1' : '0'); } catch (e) {}
-    $('coach-toggle').textContent = coachEnabled ? '提示：开' : '提示：关';
+    coachToggleLabel();
     coachLog(coachEnabled ? '🎓 教练已上线，落子前会帮你避开大坑。' : '教练实时提示已关闭，终局复盘仍会保留。');
   });
-  coachToggleUI2();
-  function coachToggleUI2() { $('coach-toggle').textContent = coachEnabled ? '提示：开' : '提示：关'; }
+  coachToggleLabel();
+  function coachToggleLabel() { $('coach-toggle').textContent = coachEnabled ? '提示：开' : '提示：关'; }
   coachLog('🎓 教练已上线：实时提醒你避开大坑、点评好棋，输了帮你复盘找败因。');
 
   var COACH_SHAPES = [
@@ -865,7 +865,7 @@
       coachLog('🤖 对方在 ' + coordName(x, y) + ' 做出双冲四，防不过来了。', 'warn');
     } else if (shape.rushFour) {
       coachLog('🔔 对方在 ' + coordName(x, y) + ' 冲四！必须挡在 ' + (pts.length ? coordName(pts[0].x, pts[0].y) : '成五点') + '。', 'warn');
-    } else if (shape.liveThree || shape.rushFour + shape.liveThree > 0) {
+    } else if (shape.liveThree) {
       coachLog('🔔 对方在 ' + coordName(x, y) + ' 做出活三，现在防守代价最小。', 'warn');
     }
   }
@@ -888,7 +888,7 @@
     for (i = 0; i < history.length; i++) {
       var mm = history[i];
       board[G.idx(mm.x, mm.y)] = mm.p;
-      if (mm.p !== winnerColor) continue;
+      if (mm.p !== winnerColor || i === history.length - 1) continue; // 末手为制胜手本身，不算双杀
       var wpts = coachFivePoints(board, winnerColor);
       if (wpts.length >= 2 && !fatal) {
         fatal = { idx: i + 1, at: { x: mm.x, y: mm.y }, pts: wpts };

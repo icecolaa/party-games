@@ -50,6 +50,26 @@
   .confirm-bar button { flex: 0 0 auto; padding: 8px 18px; font-size: 14px; }
   .confirm-bar .primary { background: var(--accent); color: #231a05; }
   .confirm-bar .cancel { background: rgba(255,255,255,.1); color: #e8ecf3; border: 1px solid var(--line); }
+  .join-row { display: flex; gap: 8px; }
+  .join-row input {
+    flex: 1; min-width: 0; background: #232a3a; color: #e8ecf3;
+    border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+    font-size: 16px; letter-spacing: 4px; text-transform: uppercase;
+  }
+  .room-code-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 15px; }
+  .room-code-row b { font-size: 22px; letter-spacing: 5px; color: var(--accent); }
+  .mini-ghost {
+    flex: 0 0 auto; padding: 6px 14px; font-size: 13px; font-weight: 600;
+    background: rgba(255,255,255,.08); color: #e8ecf3; border: 1px solid var(--line); border-radius: 8px; cursor: pointer;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  }
+  #toast {
+    position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+    background: rgba(12,16,26,.92); color: #fff; padding: 10px 18px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.15); font-size: 14px; max-width: 86vw;
+    opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 99;
+  }
+  #toast.show { opacity: 1; }
   .panel { flex: 0 1 300px; min-width: 260px; display: flex; flex-direction: column; gap: 14px; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
   .status { display: flex; align-items: center; gap: 12px; min-height: 30px; font-size: 16px; font-weight: 600; }
@@ -136,18 +156,42 @@
         </div>
       </div>
       <div class="card">
-        <div class="seg-label">AI 棋力</div>
-        <div class="seg" id="seg-level">
-          <button data-level="easy" class="seg-btn">入门</button>
-          <button data-level="medium" class="seg-btn active">进阶</button>
-          <button data-level="hard" class="seg-btn">大师</button>
+        <div class="seg-label">游戏模式</div>
+        <div class="seg" id="seg-mode">
+          <button data-mode="ai" class="seg-btn active">人机对战</button>
+          <button data-mode="online" class="seg-btn">联机对战</button>
         </div>
-        <div class="seg-label" style="margin-top:12px;">先手方</div>
-        <div class="seg" id="seg-side">
-          <button data-side="human" class="seg-btn active">我先手 · 执黑</button>
-          <button data-side="ai" class="seg-btn">AI 先手 · 执黑</button>
+        <div id="ai-settings">
+          <div class="seg-label" style="margin-top:12px;">AI 棋力</div>
+          <div class="seg" id="seg-level">
+            <button data-level="easy" class="seg-btn">入门</button>
+            <button data-level="medium" class="seg-btn active">进阶</button>
+            <button data-level="hard" class="seg-btn">大师</button>
+          </div>
+          <div class="seg-label" style="margin-top:12px;">先手方</div>
+          <div class="seg" id="seg-side">
+            <button data-side="human" class="seg-btn active">我先手 · 执黑</button>
+            <button data-side="ai" class="seg-btn">AI 先手 · 执黑</button>
+          </div>
+          <div class="hint">棋力切换立即生效；切换先手方会立即开始新对局。</div>
         </div>
-        <div class="hint">棋力切换立即生效；切换先手方会立即开始新对局。</div>
+      </div>
+      <div class="card" id="online-card" style="display:none">
+        <div id="online-lobby">
+          <div class="btns" style="margin-bottom:10px;"><button id="btn-create-room">创建房间（我执黑先行）</button></div>
+          <div class="join-row">
+            <input id="join-code" maxlength="4" placeholder="输入房号" autocomplete="off" spellcheck="false">
+            <button id="btn-join" class="ghost" style="flex:0 0 auto;padding:10px 18px;">加入</button>
+          </div>
+          <div class="hint">创建后把房码或链接发给好友，对方加入即可开战；黑先白后，完胜后可互换黑白再战。</div>
+        </div>
+        <div id="online-active" style="display:none">
+          <div class="room-code-row">
+            <span>房间 <b id="room-code-text">----</b></span>
+            <button id="btn-share" class="mini-ghost">分享邀请</button>
+          </div>
+          <div class="hint" id="online-hint"></div>
+        </div>
       </div>
       <div class="card btns">
         <button id="btn-new">新对局</button>
@@ -158,6 +202,7 @@
   </main>
   <footer>AI 逻辑：一步成五必争、对方冲四必挡（强制应手），双四 / 四三 / 双活三组合识别，迭代加深 α-β 搜索（大师层深 4），终局连五（含长连）自动判定并高亮。</footer>
 </div>
+<div id="toast"></div>
 
 <script src="ai.js"></script>
 <script>
@@ -179,6 +224,10 @@
   var bannerEl = $('banner'), bannerText = $('banner-text');
   var moveInfo = $('moveinfo');
   var curLevel = 'medium', curSide = 'human';
+  var mode = 'ai';
+  var aiSettings = $('ai-settings'), onlineCard = $('online-card');
+  var online = { code: null, pid: null, role: null, version: 0 };
+  var polling = false, overAnnouncedVersion = -1, toastTimer = null;
   var confirmBar = $('confirm-bar'), pendingCell = null;
   var touchStart = null, lastTouchHandledAt = 0;
 
@@ -390,10 +439,236 @@
   });
   $('confirm-cancel').addEventListener('click', function () { hideConfirmBar(); render(); });
 
+  /* ---------------- 联机对战 ---------------- */
+  function toast(msg) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2600);
+  }
+
+  async function api(path, opts) {
+    opts = opts || {};
+    let res;
+    try {
+      res = await fetch(path, {
+        method: opts.method || 'GET',
+        headers: opts.body ? { 'Content-Type': 'application/json' } : undefined,
+        body: opts.body ? JSON.stringify(opts.body) : undefined,
+        signal: AbortSignal.timeout(opts.timeout || 8000)
+      });
+    } catch (e) { throw new Error('network'); }
+    let j = null;
+    try { j = await res.json(); } catch (e) {}
+    if (!res.ok || !j) throw new Error((j && j.error) || ('http_' + res.status));
+    return j;
+  }
+
+  function setMode(m) {
+    if (mode === m) return;
+    mode = m;
+    Array.prototype.forEach.call($('seg-mode').children, function (b) {
+      b.classList.toggle('active', b.dataset.mode === m);
+    });
+    aiSettings.style.display = m === 'ai' ? '' : 'none';
+    onlineCard.style.display = m === 'online' ? '' : 'none';
+    $('btn-undo').style.display = m === 'online' ? 'none' : '';
+    if (m === 'online') {
+      S.token++; S.thinking = false;   // 停掉进行中的人机对局
+      resetBoardState();
+      S.human = BLACK; S.ai = WHITE;
+      onlineLobbyUI();
+      setIcon(BLACK);
+      setStatus('创建房间或输入房号加入');
+      moveInfo.textContent = '联机模式';
+      render();
+      tryResumeSeat();                  // 带 ?room= 链接或本地座位时自动恢复
+    } else {
+      leaveRoom();
+      newGame();
+    }
+  }
+
+  function leaveRoom() {
+    online.code = null; online.pid = null; online.role = null; online.version = 0;
+    try { sessionStorage.removeItem('gomoku_online_seat'); } catch (e) {}
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  }
+
+  function onlineLobbyUI() {
+    $('online-lobby').style.display = '';
+    $('online-active').style.display = 'none';
+    $('join-code').value = '';
+  }
+
+  function leaveToLobby() {
+    leaveRoom();
+    resetBoardState();
+    S.human = BLACK; S.ai = WHITE;
+    onlineLobbyUI();
+    setIcon(BLACK);
+    setStatus('已离开房间，可重新创建或加入');
+    moveInfo.textContent = '未在对局中';
+    render();
+  }
+
+  function tryResumeSeat() {
+    var seat = null;
+    try { seat = JSON.parse(sessionStorage.getItem('gomoku_online_seat') || 'null'); } catch (e) {}
+    var m = location.search.match(/[?&]room=([A-Za-z0-9]{4})/);
+    var code = m ? m[1].toUpperCase() : (seat ? seat.code : null);
+    if (!code) return;
+    joinRoom(code, seat && seat.pid ? seat.pid : null, true);
+  }
+
+  async function createRoom() {
+    try {
+      const r = await api('/api/room/create', { method: 'POST', body: {} });
+      enterRoom(r);
+      toast('房间已创建，把房码「' + r.code + '」分享给好友');
+    } catch (e) { toast('创建失败：' + e.message); }
+  }
+
+  async function joinRoom(code, pid, silent) {
+    try {
+      const r = await api('/api/room/join', { method: 'POST', body: { code: code, pid: pid || undefined } });
+      enterRoom(r);
+    } catch (e) {
+      var msg = e.message === 'room_full' ? '房间已满（已有两位玩家）'
+              : e.message === 'room_not_found' ? '房间不存在或已过期'
+              : '加入失败：' + e.message;
+      if (!silent) toast(msg);
+      else { leaveRoom(); onlineLobbyUI(); }
+    }
+  }
+
+  function enterRoom(r) {
+    online.code = r.code; online.pid = r.playerId; online.role = r.role; online.version = 0;
+    try { sessionStorage.setItem('gomoku_online_seat', JSON.stringify({ code: r.code, pid: r.playerId, role: r.role })); } catch (e) {}
+    try { history.replaceState(null, '', location.pathname + '?room=' + r.code); } catch (e) {}
+    resetBoardState();
+    $('online-lobby').style.display = 'none';
+    $('online-active').style.display = '';
+    $('room-code-text').textContent = r.code;
+    applySnapshot(r.snapshot);
+    pollLoop();
+  }
+
+  function applySnapshot(s) {
+    if (!s || typeof s.version !== 'number' || s.version < online.version) return;
+    online.version = s.version;
+    hideConfirmBar();
+    // 座位可能因「再战互换黑白」变化：按自己的 playerId 重新推导角色
+    if (s.roles && online.pid) {
+      var newRole = s.roles.black === online.pid ? 'black' : (s.roles.white === online.pid ? 'white' : online.role);
+      if (newRole !== online.role) {
+        online.role = newRole;
+        try { sessionStorage.setItem('gomoku_online_seat', JSON.stringify({ code: online.code, pid: online.pid, role: newRole })); } catch (e) {}
+      }
+    }
+    S.board = s.board;
+    S.history = s.history;
+    S.over = !!s.over;
+    S.winCells = s.winCells || null;
+    S.lastMove = s.lastMove || null;
+    S.thinking = false;
+    S.turn = s.turn;
+    S.hover = null;
+    var myColor = online.role === 'black' ? BLACK : WHITE;
+    var oppColor = G.other(myColor);
+    S.human = myColor; S.ai = oppColor;
+    var oppOnline = online.role === 'black' ? s.blackOnline : s.whiteOnline;
+
+    if (s.over) {
+      if (s.winner === 0) { bannerText.textContent = '🤝 平局'; setStatus('对局结束：平局'); }
+      else if (s.winner === myColor) { bannerText.textContent = '🎉 你赢了！'; setStatus('恭喜，你获胜了！'); setIcon(myColor); }
+      else { bannerText.textContent = '😔 对方获胜'; setStatus('对方获胜，点「再战」换先复仇'); setIcon(oppColor); }
+      if (overAnnouncedVersion !== s.version) {
+        overAnnouncedVersion = s.version;
+        bannerEl.classList.remove('hidden');
+        $('banner-btn').textContent = '再战（互换黑白）';
+      }
+    } else {
+      bannerEl.classList.add('hidden');
+      $('banner-btn').textContent = '再来一局';
+      if (!s.blackOnline || !s.whiteOnline) { setIcon(oppColor); setStatus('等待对方加入…'); }
+      else if (s.turn === myColor) { setIcon(myColor); setStatus('轮到你落子（你执' + (myColor === BLACK ? '黑' : '白') + '）'); }
+      else { setIcon(oppColor); setStatus(oppOnline ? '等待对方落子…' : '对方掉线，等待重连…'); }
+    }
+    $('online-hint').textContent = '你执' + (myColor === BLACK ? '黑（先行）' : '白（后行）') + (oppOnline ? ' · 对方在线' : ' · 对方未加入/不在线');
+    moveInfo.textContent = '房间 ' + s.code + ' · 第 ' + s.history.length + ' 手';
+    render();
+  }
+
+  async function pollLoop() {
+    if (polling) return;
+    polling = true;
+    while (mode === 'online' && online.code) {
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(function () { ctrl.abort(); }, 32000);
+        let res;
+        try {
+          res = await fetch('/api/room/' + online.code + '/state?v=' + online.version + '&pid=' + encodeURIComponent(online.pid), { signal: ctrl.signal });
+        } finally { clearTimeout(timer); }
+        if (res.status === 404) { toast('房间已结束或过期'); leaveToLobby(); break; }
+        const s = await res.json();
+        if (mode !== 'online' || !online.code || s.code !== online.code) break;
+        applySnapshot(s);
+      } catch (e) {
+        if (mode !== 'online' || !online.code) break;
+        setStatus('连接中断，正在重连…');
+        await new Promise(function (r2) { setTimeout(r2, 1200); });
+      }
+    }
+    polling = false;
+  }
+
+  async function onlineMove(x, y) {
+    try {
+      const r = await api('/api/room/' + online.code + '/move', { method: 'POST', body: { pid: online.pid, x: x, y: y }, timeout: 8000 });
+      if (r.snapshot) applySnapshot(r.snapshot);
+    } catch (e) {
+      if (e.message === 'not_your_turn') toast('还没轮到你');
+      else if (e.message === 'game_over') toast('对局已结束');
+      else toast('落子失败，请重试');
+    }
+  }
+
+  async function rematch() {
+    try {
+      const r = await api('/api/room/' + online.code + '/rematch', { method: 'POST', body: { pid: online.pid } });
+      if (r.role) {
+        online.role = r.role;
+        try { sessionStorage.setItem('gomoku_online_seat', JSON.stringify({ code: online.code, pid: online.pid, role: r.role })); } catch (e) {}
+      }
+      if (r.snapshot) applySnapshot(r.snapshot);
+    } catch (e) { toast('再战失败：' + e.message); }
+  }
+
+  $('btn-create-room').addEventListener('click', createRoom);
+  $('btn-join').addEventListener('click', function () {
+    var code = $('join-code').value.trim().toUpperCase();
+    if (!/^[A-Z0-9]{4}$/.test(code)) { toast('请输入 4 位房号'); return; }
+    joinRoom(code, null, false);
+  });
+  $('join-code').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btn-join').click(); });
+  $('btn-share').addEventListener('click', function () {
+    if (!online.code) return;
+    var link = location.origin + location.pathname + '?room=' + online.code;
+    if (navigator.share) {
+      navigator.share({ title: '五子棋对战', text: '来和我下一盘五子棋！房号 ' + online.code, url: link }).catch(function () {});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(function () { toast('邀请链接已复制'); }, function () { toast('房号：' + online.code); });
+    } else { toast('房号：' + online.code); }
+  });
+
   /* ---------------- 对局流程 ---------------- */
 
   function doMove(x, y, p) {
     hideConfirmBar();
+    if (mode === 'online') { onlineMove(x, y); return; }
     S.board[G.idx(x, y)] = p;
     S.history.push({ x: x, y: y, p: p });
     S.lastMove = { x: x, y: y, p: p };
@@ -453,17 +728,22 @@
     bannerEl.classList.remove('hidden');
   }
 
-  function newGame() {
+  function resetBoardState() {
     S.token++;
     hideConfirmBar();
     S.board = G.createBoard();
     S.history = [];
     S.over = false; S.thinking = false; S.winCells = null;
     S.lastMove = null; S.hover = null;
-    S.human = curSide === 'ai' ? WHITE : BLACK;
-    S.ai = G.other(S.human);
     S.turn = BLACK;
     bannerEl.classList.add('hidden');
+    overAnnouncedVersion = -1;
+  }
+
+  function newGame() {
+    resetBoardState();
+    S.human = curSide === 'ai' ? WHITE : BLACK;
+    S.ai = G.other(S.human);
     moveInfo.textContent = '对局开始';
     if (S.ai === BLACK) scheduleAI();
     else { setIcon(BLACK); setStatus('你执黑先行，点击棋盘落子'); }
@@ -518,11 +798,21 @@
     if (btn) setSide(btn.dataset.side);
   });
 
-  $('btn-new').addEventListener('click', newGame);
-  $('banner-btn').addEventListener('click', newGame);
+  $('btn-new').addEventListener('click', function () {
+    if (mode === 'online') { leaveToLobby(); return; }
+    newGame();
+  });
+  $('banner-btn').addEventListener('click', function () {
+    if (mode === 'online') rematch(); else newGame();
+  });
   $('btn-undo').addEventListener('click', undo);
+  $('seg-mode').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-mode]');
+    if (btn) setMode(btn.dataset.mode);
+  });
   renderScores();
   newGame();
+  if (/[?&]room=/.test(location.search)) setMode('online'); // 带 ?room= 邀请链接进入 → 自动切联机
 
   // 调试 / 自动化测试钩子
   window.__gomoku = { S: S, doMove: doMove, newGame: newGame, undo: undo };

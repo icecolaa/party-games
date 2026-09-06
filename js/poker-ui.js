@@ -108,7 +108,7 @@ function buildTableOnce() {
     slot.className = 'card slot';
     bc.appendChild(slot);
   }
-  UI.prevBoardLen = 0;
+  UI.prevBoardLen = G.board.length; // 重建座位表时保留公共牌长度，避免重播入场动画
 }
 
 /* ---------- 渲染 ---------- */
@@ -285,6 +285,7 @@ function updateRaiseLabel() {
 }
 
 function uiEnableHumanActions(p) {
+  document.body.classList.remove('log-open'); // 手机端自动收起日志抽屉，避免挡住行动按钮
   if (!$('btnCheckCall').disabled) return; // 已启用，避免重复状态刷新打断拖动
   UI.humanP = p;
   const toCall = Math.max(0, G.currentBet - p.bet);
@@ -349,6 +350,7 @@ function uiLog(msg, cls) {
 /* ---------- 每局结算弹窗 ---------- */
 
 function uiShowResult(payload) {
+  document.body.classList.remove('log-open'); // 结算弹窗不被日志抽屉遮挡
   const humanSeat = mySeatIdx();
   const first = payload.lines[0];
   const iWon = payload.lines.some(l => l.winners.some(w => w.seat === humanSeat));

@@ -203,6 +203,11 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
     assert(ownBox.style.display === 'none', '无可用底牌时 ownCards 应隐藏');
   }
 
+  // 日志抽屉自动收起：轮到你行动时不应被抽屉挡住
+  document.body.classList.add('log-open');
+  window.uiEnableHumanActions(G.players[0]);
+  assert(!document.body.classList.contains('log-open'), '轮到你行动时应自动收起日志抽屉');
+
   window.matchMedia = origMM;
   window.syncViewportMode();
   assert(!document.body.classList.contains('m-viewport'), '恢复宽屏后应移除 m-viewport');

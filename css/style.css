@@ -40,7 +40,7 @@ main { flex: 1; display: flex; min-height: 0; }
   width: min(940px, 97%);
   height: 100%;
   max-height: 570px;
-  min-height: 480px;
+  min-height: min(480px, 100%); /* 手机横屏等矮视口不溢出 */
   border-radius: 280px;
   background: radial-gradient(ellipse at center, #2e8b57 0%, #1f6b43 55%, #174d31 100%);
   box-shadow:

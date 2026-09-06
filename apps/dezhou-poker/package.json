@@ -1,0 +1,59 @@
+{
+  "name": "dezhou-poker",
+  "version": "1.0.0",
+  "description": "智能德州扑克：单机AI/双人本地热座/联网房间对战，蒙特卡洛策略AI，支持2~8人",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests/poker-test.js && node tests/net-e2e.js",
+    "test:ui": "node tests/ui-test.js && node tests/ui-hotseat-test.js && node tests/ui-net-test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitee.com/ice-colaa/dezhou-poker.git"
+  },
+  "keywords": [
+    "texas-holdem",
+    "poker",
+    "monte-carlo",
+    "websocket",
+    "ai"
+  ],
+  "author": "ice-colaa",
+  "license": "MIT",
+  "type": "commonjs",
+  "devDependencies": {
+    "jsdom": "^30.0.1"
+  },
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {
+    "bidi-js": "^1.0.3",
+    "css-tree": "^3.2.1",
+    "data-urls": "^7.0.0",
+    "decimal.js": "^10.6.0",
+    "entities": "^8.0.0",
+    "html-encoding-sniffer": "^6.0.0",
+    "is-potential-custom-element-name": "^1.0.1",
+    "lru-cache": "^11.5.2",
+    "mdn-data": "^2.27.1",
+    "parse5": "^8.0.1",
+    "punycode": "^2.3.1",
+    "require-from-string": "^2.0.2",
+    "saxes": "^6.0.0",
+    "source-map-js": "^1.2.1",
+    "symbol-tree": "^3.2.4",
+    "tldts": "^7.4.11",
+    "tldts-core": "^7.4.11",
+    "tough-cookie": "^6.0.2",
+    "tr46": "^6.0.0",
+    "undici": "^8.10.2",
+    "w3c-xmlserializer": "^5.0.0",
+    "webidl-conversions": "^8.0.1",
+    "whatwg-mimetype": "^5.0.0",
+    "whatwg-url": "^17.1.0",
+    "xml-name-validator": "^5.0.0",
+    "xmlchars": "^2.2.0"
+  }
+}

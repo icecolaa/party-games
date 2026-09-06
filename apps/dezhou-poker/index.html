@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>智能德州扑克 · Texas Hold'em AI</title>
+<link rel="stylesheet" href="css/style.css?v=1.2.5">
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="logo">🂡 智能德州扑克</div>
+    <div id="handInfo" class="hand-info">准备中…</div>
+    <div class="top-actions">
+      <label class="toggle" title="实时估算你的获胜概率"><input type="checkbox" id="equityToggle" checked> 胜率</label>
+      <button id="logToggle" class="ghost log-toggle" title="对局记录">📜</button>
+      <button id="rulesBtn" class="ghost">牌型说明</button>
+      <button id="newGameBtn" class="ghost">重新开始</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="tableZone">
+      <div id="table">
+        <div id="tableInner">
+          <div id="boardArea">
+            <div id="potDisplay">底池 <b id="potChips">0</b></div>
+            <div id="boardCards"></div>
+            <div id="streetLabel"></div>
+          </div>
+          <div id="seats"></div>
+        </div>
+      </div>
+    </section>
+    <aside id="logPanel">
+      <div class="log-title">对局记录 <button id="logClose" class="ghost log-close">✕ 收起</button></div>
+      <div id="logList"></div>
+    </aside>
+  </main>
+
+  <footer id="actionBar">
+    <div id="ownCards"></div>
+    <div id="leftInfo">
+      <div id="turnHint">等待游戏开始…</div>
+      <div id="equityBadge"></div>
+    </div>
+    <div id="actButtons">
+      <button id="btnFold" class="act fold" disabled>弃牌</button>
+      <button id="btnCheckCall" class="act check" disabled>过牌</button>
+      <button id="btnRaise" class="act raise" disabled>加注</button>
+    </div>
+    <div id="raisePanel" style="visibility:hidden">
+      <div class="presets">
+        <button data-k="min" type="button">最小</button>
+        <button data-k="half" type="button">½ 池</button>
+        <button data-k="pot" type="button">满池</button>
+        <button data-k="allin" type="button">全下</button>
+      </div>
+      <input type="range" id="raiseSlider" min="0" max="100" step="1" value="0">
+      <div id="raiseAmount">0</div>
+    </div>
+  </footer>
+</div>
+
+<!-- 开局设置 -->
+<div id="setupOverlay" class="overlay">
+  <div class="panel setup">
+    <h1>🂡 智能德州扑克</h1>
+    <p class="sub">单机 AI · 双人本地热座 · 联网房间对战 · 2~8 人同桌</p>
+
+    <div id="localForm">
+      <div class="form-row">
+        <label>真人玩家</label>
+        <div class="seg">
+          <label><input type="radio" name="humans" value="1" checked> 1 人（对战 AI）</label>
+          <label><input type="radio" name="humans" value="2"> 2 人（本地热座）</label>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>你的昵称</label>
+        <input id="playerName" maxlength="10" value="你">
+      </div>
+      <div class="form-row" id="p2Row" style="display:none">
+        <label>玩家 2 昵称</label>
+        <input id="player2Name" maxlength="10" value="玩家2">
+      </div>
+      <div class="form-row">
+        <label>玩家总数（含真人）</label>
+        <div class="slider-line">
+          <input type="range" id="totalPlayers" min="2" max="8" value="4">
+          <b id="totalLabel">4</b>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>AI 难度</label>
+        <div class="seg wrap">
+          <label><input type="radio" name="difficulty" value="novice"> 新手</label>
+          <label><input type="radio" name="difficulty" value="easy"> 入门</label>
+          <label><input type="radio" name="difficulty" value="mid" checked> 进阶</label>
+          <label><input type="radio" name="difficulty" value="hard"> 困难</label>
+          <label><input type="radio" name="difficulty" value="master"> 大师</label>
+          <label><input type="radio" name="difficulty" value="mixed"> 混合</label>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>初始筹码</label>
+        <select id="startChips">
+          <option value="1000">1,000</option>
+          <option value="2000" selected>2,000</option>
+          <option value="5000">5,000</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>盲注</label>
+        <select id="blinds">
+          <option value="20">10 / 20</option>
+          <option value="40" selected>20 / 40</option>
+          <option value="50">25 / 50</option>
+        </select>
+      </div>
+      <div class="btn-line">
+        <button id="startBtn" class="primary">开始本地游戏</button>
+        <button id="netBtn" class="ghost big">🌐 联网对战</button>
+      </div>
+      <p class="tip">AI 每一步都会进行数百至上千次蒙特卡洛随机发牌模拟来估算真实胜率，再结合底池赔率、位置与对手行为做出弃牌、跟注、加注、诈唬决策；「大师」还会用强牌慢打设陷阱，「混合」模式给每个 AI 随机分配不同难度。</p>
+    </div>
+
+    <div id="netPanel" style="display:none">
+      <div class="form-row">
+        <label>服务器地址</label>
+        <input id="netAddr" placeholder="ws://127.0.0.1:8899">
+      </div>
+      <div class="form-row">
+        <label>你的昵称</label>
+        <input id="netName" maxlength="10" value="我">
+      </div>
+      <div class="form-row">
+        <label>创建 / 加入</label>
+        <div class="net-line">
+          <button id="netCreate" class="primary slim">创建房间</button>
+          <span class="or">或</span>
+          <input id="netCode" maxlength="4" placeholder="房间号" class="code-input">
+          <button id="netJoin" class="ghost big">加入房间</button>
+        </div>
+      </div>
+      <div class="btn-line">
+        <button id="netBack" class="ghost">← 返回本地设置</button>
+      </div>
+      <p class="tip">需先运行 <b>node server.js</b> 启动对战服务器（默认端口 8899）。创建房间后把 4 位房间号告诉朋友，对方选择「联网对战 → 加入房间」即可同桌。房主可添加 AI 补位。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 联网房间大厅 -->
+<div id="lobbyOverlay" class="overlay hidden">
+  <div class="panel">
+    <h2>房间 <span id="lobbyCode" class="code-big">—</span></h2>
+    <div id="lobbyPlayers" class="lobby-list"></div>
+    <h2>对局配置</h2>
+    <div class="form-row">
+      <label>AI 补位数量</label>
+      <select id="cfgAiFill">
+        <option value="0">0（纯真人对战）</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>初始筹码</label>
+      <select id="cfgChips">
+        <option value="1000">1,000</option>
+        <option value="2000" selected>2,000</option>
+        <option value="5000">5,000</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>盲注</label>
+      <select id="cfgBb">
+        <option value="20">10 / 20</option>
+        <option value="40" selected>20 / 40</option>
+        <option value="50">25 / 50</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>AI 难度</label>
+      <select id="cfgDiff">
+        <option value="novice">新手</option>
+        <option value="easy">入门</option>
+        <option value="mid" selected>进阶</option>
+        <option value="hard">困难</option>
+        <option value="master">大师</option>
+        <option value="mixed">混合</option>
+      </select>
+    </div>
+    <div class="btn-line">
+      <button id="lobbyStart" class="primary">开始游戏</button>
+      <button id="lobbyLeave" class="ghost big">离开房间</button>
+    </div>
+    <p class="tip" id="lobbyHint"></p>
+  </div>
+</div>
+
+<!-- 双人热座换手隐私屏 -->
+<div id="handoffOverlay" class="overlay hidden">
+  <div class="panel center">
+    <h2>请将设备交给</h2>
+    <div id="handoffName" class="handoff-name"></div>
+    <p class="sub">请其他玩家先移开视线，再点击下方按钮查看手牌</p>
+    <button id="handoffBtn" class="primary">我已就位，查看手牌</button>
+  </div>
+</div>
+
+<!-- 牌型说明 -->
+<div id="rulesOverlay" class="overlay hidden">
+  <div class="panel">
+    <h2>牌型大小（从大到小）</h2>
+    <ol class="rank-list">
+      <li><b>皇家同花顺</b> — 同花色 A K Q J 10</li>
+      <li><b>同花顺</b> — 同花色五张连牌（最小为 A2345）</li>
+      <li><b>四条</b> — 四张同点数</li>
+      <li><b>葫芦</b> — 三条 + 一对</li>
+      <li><b>同花</b> — 五张同花色</li>
+      <li><b>顺子</b> — 五张连续点数</li>
+      <li><b>三条</b> — 三张同点数</li>
+      <li><b>两对</b></li>
+      <li><b>一对</b></li>
+      <li><b>高牌</b></li>
+    </ol>
+    <h2>玩法说明</h2>
+    <ul class="rule-list">
+      <li>每人 2 张底牌，与 5 张公共牌组合出最大的 5 张牌型。</li>
+      <li>四个下注轮：翻牌前 → 翻牌 → 转牌 → 河牌，可弃牌 / 过牌 / 跟注 / 加注 / 全下。</li>
+      <li>有人全下时会自动形成主池与边池，只有 contribution 覆盖到该池的玩家有资格赢取。</li>
+      <li>庄家按钮（D）每局顺时针移动；翻牌前大盲左侧先行动，翻牌后庄家左侧先行动。</li>
+      <li>顶部「显示我的胜率」会实时用蒙特卡洛模拟估算你的获胜概率与跟注所需的最低胜率。</li>
+    </ul>
+    <button id="rulesClose" class="primary">知道了</button>
+  </div>
+</div>
+
+<!-- 每局结算 -->
+<div id="resultOverlay" class="overlay hidden">
+  <div class="panel result">
+    <h2 id="resultTitle"></h2>
+    <div id="resultPots"></div>
+    <div id="revealList"></div>
+    <button id="continueBtn" class="primary">继续下一局</button>
+  </div>
+</div>
+
+<!-- 终局 -->
+<div id="gameOverOverlay" class="overlay hidden">
+  <div class="panel">
+    <h2 id="goTitle"></h2>
+    <div id="goStandings"></div>
+    <p id="goHint" class="tip"></p>
+    <button id="restartBtn" class="primary">再来一局</button>
+  </div>
+</div>
+
+<script src="js/poker-core.js?v=1.2.5"></script>
+<script src="js/poker-ai.js?v=1.2.5"></script>
+<script src="js/poker-game.js?v=1.2.5"></script>
+<script src="js/poker-ui.js?v=1.2.5"></script>
+<script src="js/main.js?v=1.2.5"></script>
+</body>
+</html>

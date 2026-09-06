@@ -309,6 +309,10 @@ button.primary.slim { padding: 10px 18px; font-size: 14px; margin-top: 0; }
 #goStandings th, #goStandings td { padding: 7px 10px; text-align: left; border-bottom: 1px solid #2a323c; }
 #goStandings th { color: #9fb0c0; font-size: 12.5px; }
 
+/* 手机端自己的底牌：放大显示在行动栏左侧（桌面隐藏） */
+#ownCards { display: none; }
+.card.own { box-shadow: 0 0 0 2px #ffd76a, 0 4px 12px rgba(0, 0, 0, .55); }
+
 /* ---------- 响应式 ---------- */
 #app { height: 100vh; height: 100dvh; }
 
@@ -386,12 +390,16 @@ button, input[type="range"] { touch-action: manipulation; }
   #potDisplay b { font-size: 14px; }
   #streetLabel { font-size: 11px; margin-top: 6px; letter-spacing: 1px; }
 
-  /* 行动栏：两行布局 */
+  /* 行动栏：两行布局 + 放大的自己的底牌 */
   #actionBar { flex-wrap: wrap; gap: 8px; padding: 8px 10px 10px; }
-  #leftInfo { width: 100%; display: flex; justify-content: space-between; align-items: baseline; }
+  #ownCards { display: flex; gap: 5px; align-self: center; }
+  #ownCards .card { width: 52px; height: 73px; border-radius: 6px; }
+  #ownCards .card .cr { font-size: 15px; top: 3px; left: 5px; }
+  #ownCards .card .cs { font-size: 26px; }
+  #leftInfo { width: auto; flex: 1; min-width: 0; flex-direction: column; align-items: flex-start; gap: 2px; }
   #turnHint { font-size: 12.5px; }
-  #equityBadge { margin-top: 0; font-size: 11.5px; }
-  #actButtons { flex: 1; gap: 6px; width: 100%; }
+  #equityBadge { margin-top: 0; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  #actButtons { flex: 1 1 100%; gap: 6px; width: 100%; }
   button.act { flex: 1; min-width: 0; padding: 11px 0; font-size: 14px; border-radius: 9px; }
   #raisePanel { flex: 1 1 100%; gap: 8px; }
   .presets button { padding: 4px 8px; font-size: 11.5px; }

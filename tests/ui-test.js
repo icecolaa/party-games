@@ -190,6 +190,19 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   const xs = UI.seatEls.map(el => parseFloat(el.style.left));
   const narrowSpan = Math.max(...xs) - Math.min(...xs);
   assert(narrowSpan < wideSpan, `窄屏椭圆应比横向更窄（${narrowSpan.toFixed(1)}% < ${wideSpan.toFixed(1)}%）`);
+
+  // 窄屏下自己的底牌应放大显示在行动栏，牌桌座位里不再重复
+  window.renderAll();
+  const ownBox = $('ownCards');
+  if (G.players[0].hole && G.players[0].hole.length === 2 && !G.players[0].folded) {
+    assert(ownBox.style.display === 'flex', '窄屏下行动栏应显示自己的底牌');
+    assert(ownBox.querySelectorAll('.card.own').length === 2, 'ownCards 应有 2 张带 own 样式的牌');
+    const seatCards = UI.seatEls[0].querySelectorAll('.card');
+    assert(seatCards.length === 0, '窄屏下自己座位里不应再画小牌');
+  } else {
+    assert(ownBox.style.display === 'none', '无可用底牌时 ownCards 应隐藏');
+  }
+
   window.matchMedia = origMM;
   window.syncViewportMode();
   assert(!document.body.classList.contains('m-viewport'), '恢复宽屏后应移除 m-viewport');

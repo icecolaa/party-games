@@ -151,8 +151,12 @@ function renderAll() {
     const cardsEl = el.querySelector('.cards');
     let html = '';
     if (!p.out && p.hole && p.hole.length) {
-      const canSee = (UI.viewing === i) || p.revealed;
-      html = p.hole.map(c => canSee ? cardHTML(c) : backHTML()).join('');
+      // 手机端自己的底牌放大显示在行动栏，牌桌座位里不再重复画
+      const ownInBar = document.body.classList.contains('m-viewport') && mySeatIdx() === i;
+      if (!ownInBar) {
+        const canSee = (UI.viewing === i) || p.revealed;
+        html = p.hole.map(c => canSee ? cardHTML(c) : backHTML()).join('');
+      }
     }
     if (cardsEl.innerHTML !== html) cardsEl.innerHTML = html;
 
@@ -173,9 +177,25 @@ function renderAll() {
   }
   $('potChips').textContent = fmt(G.pot);
   renderBoard();
+  renderOwnCards();
   uiUpdateTop();
   updateEquityBadge();
   updateTurnHint();
+}
+
+/* 手机端：自己的底牌放大显示在行动栏左侧 */
+function renderOwnCards() {
+  const box = $('ownCards');
+  if (!box) return;
+  const narrow = document.body.classList.contains('m-viewport');
+  const idx = mySeatIdx();
+  const p = idx >= 0 ? G.players[idx] : null;
+  const show = narrow && p && !p.out && !p.folded &&
+    p.hole && p.hole.length === 2 && UI.viewing === idx;
+  box.style.display = show ? 'flex' : 'none';
+  if (!show) return;
+  const html = p.hole.map(c => cardHTML(c, 'own')).join('');
+  if (box.innerHTML !== html) box.innerHTML = html;
 }
 
 function updateTurnHint() {
@@ -190,7 +210,11 @@ function updateTurnHint() {
 }
 
 function uiUpdateTop() {
-  $('handInfo').textContent = `第 ${G.handNo} 局 ｜ 盲注 ${G.sb}/${G.bb} ｜ AI 难度：${G.difficultyLabel || '—'}`;
+  const compact = document.body.classList.contains('m-viewport');
+  const diff = G.difficultyLabel || '—';
+  $('handInfo').textContent = compact
+    ? `第${G.handNo}局 · 盲${G.sb}/${G.bb} · ${diff}`
+    : `第 ${G.handNo} 局 ｜ 盲注 ${G.sb}/${G.bb} ｜ AI 难度：${diff}`;
 }
 
 /* ---------- 胜率提示 ---------- */

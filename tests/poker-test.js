@@ -24,9 +24,6 @@ vm.createContext(ctx);
 const stubs = `
 function renderAll(){}
 function uiUpdateTop(){}
-function uiSetActive(p){}
-function uiSetThinking(p,f){}
-function uiAfterAction(p){}
 function uiEnableHumanActions(p){}
 function uiDisableHumanActions(){}
 function uiShowResult(){}
@@ -176,6 +173,18 @@ console.log('[4] AI 难度档位');
   assert(normalizeDifficulty('normal') === 'mid', '旧档位 normal 应映射为 mid');
   assert(normalizeDifficulty('xxx') === 'mid', '非法档位应回退 mid');
   assert(normalizeDifficulty('master') === 'master', 'master 应保留');
+
+  // 混合模式：每个 AI 必须被分配合法档位
+  vm.runInContext(`
+    startGame({ total: 6, humanName: 'T', startChips: 1000, bb: 20, difficulty: 'mixed' });
+  `, ctx);
+  const aiDiff = vm.runInContext('G.players.filter(p => !p.isHuman).map(p => p.difficulty)', ctx);
+  assert(aiDiff.length === 5, '混合模式 6 人桌应有 5 个 AI');
+  assert(aiDiff.every(d => DIFF_ORDER.includes(d)), `每个 AI 档位应合法，实际 ${JSON.stringify(aiDiff)}`);
+  // 统一难度：AI 档位应与所设档位一致
+  vm.runInContext('startGame({ total: 4, humanName: "T", startChips: 1000, bb: 20, difficulty: "hard" })', ctx);
+  const hardDiff = vm.runInContext('G.players.filter(p => !p.isHuman).map(p => p.difficulty)', ctx);
+  assert(hardDiff.every(d => d === 'hard'), '统一难度下所有 AI 档位应一致');
 }
 
 /* ---------- 5. 引擎全流程模拟 ---------- */

@@ -436,9 +436,6 @@ function netHandle(msg) {
       NET.host = msg.host;
       renderLobby(msg.room);
       break;
-    case 'kicked':
-      $('lobbyHint').textContent = msg.msg || '无法加入房间';
-      break;
     case 'reset': {
       $('gameOverOverlay').classList.add('hidden');
       $('resultOverlay').classList.add('hidden');

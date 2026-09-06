@@ -10,8 +10,8 @@ const src = ['js/poker-core.js', 'js/poker-ai.js', 'js/poker-game.js']
 const ctx = { console, Math, Date, Set, Promise, setTimeout, clearTimeout, setInterval, clearInterval, window: { __uiLog: () => {} } };
 vm.createContext(ctx);
 vm.runInContext(`
-function renderAll(){} function uiUpdateTop(){} function uiSetActive(p){} function uiSetThinking(p,f){}
-function uiAfterAction(p){} function uiEnableHumanActions(p){} function uiDisableHumanActions(){}
+function renderAll(){} function uiUpdateTop(){}
+function uiEnableHumanActions(p){} function uiDisableHumanActions(){}
 function uiShowResult(){} function uiWaitContinue(){ return Promise.resolve(); } function uiShowGameOver(){}
 function buildTableOnce(){}
 `, ctx);

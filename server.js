@@ -192,7 +192,7 @@ function joinRoom(conn, code, name) {
   broadcastRoomInfo(room);
 }
 
-function sanitizeName(n) { return String(n || '玩家').slice(0, 10); }
+function sanitizeName(n) { return String(n || '玩家').trim().slice(0, 10) || '玩家'; }
 
 function roomConns(room) {
   const conns = [];
@@ -235,9 +235,6 @@ const GAME_SRC = fs.readFileSync(path.join(root, 'js/poker-game.js'), 'utf8');
 const DRIVER_SRC = `
 function renderAll(){ __room.hooks.state(); }
 function uiUpdateTop(){}
-function uiSetActive(){}
-function uiSetThinking(){}
-function uiAfterAction(){}
 function uiEnableHumanActions(){ __room.hooks.state(); }
 function uiDisableHumanActions(){}
 function uiHandoff(){ return Promise.resolve(); }

@@ -133,15 +133,24 @@ function bootPage(name) {
   assert(/^\d{4}$/.test(code), '房间号应为 4 位数字: ' + code);
   assert(A.NET.host === true && A.NET.meIdx === 0, '创建者应为 0 号位房主');
 
-  console.log('[N2] 加入与配置');
+  console.log('[N2] 加入失败反馈与正常加入');
+  // 先用错误房间号加入：err 应显示在大厅提示区（回归：err → netFail 路径）
   const B = bootPage('乙');
   B.click(B.$('netBtn'));
   B.$('netName').value = '乙';
-  B.$('netCode').value = code;
+  B.$('netCode').value = '0000';
   B.click(B.$('netJoin'));
   guard = 0;
   while (B.$('lobbyOverlay').classList.contains('hidden') && guard++ < 50) await sleep(100);
-  assert(!B.$('lobbyOverlay').classList.contains('hidden'), '加入后应显示大厅');
+  assert(!B.$('lobbyOverlay').classList.contains('hidden'), '加入失败后应显示大厅');
+  assert(B.$('lobbyHint').textContent.includes('不存在'), '大厅应显示“房间不存在”提示');
+  assert(B.$('lobbyCode').textContent.trim() === '—', '失败时房间号应显示占位符');
+
+  // 正确房间号加入
+  B.$('netCode').value = code;
+  B.click(B.$('netJoin'));
+  guard = 0;
+  while (B.NET.meIdx !== 1 && guard++ < 50) await sleep(100);
   assert(B.NET.meIdx === 1 && B.NET.host === false, '加入者应为 1 号位非房主');
 
   A.$('cfgAiFill').value = '1';

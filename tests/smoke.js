@@ -168,6 +168,12 @@ async function main() {
     assert.strictEqual(JSON.parse(r.text).code, code);
   });
 
+  await t('/gomoku/api/room/CODE/rematch 前缀转发可路由（未终局应 409）', async () => {
+    const r = await post(port, `/gomoku/api/room/${code}/rematch`, { pid });
+    assert.strictEqual(r.status, 409, '进行中对局再战应返回 409 而非 404（证明路由可达）');
+    assert.strictEqual(r.json.error, 'game_in_progress');
+  });
+
   console.log('— 德州扑克挂载 —');
 
   await t('/poker 301 重定向到 /poker/', async () => {
@@ -214,6 +220,14 @@ async function main() {
     }
     const alive = await get(port, '/health');
     assert.strictEqual(alive.status, 200, '服务器在恶意请求后应仍存活');
+  });
+
+  await t('非常规斜杠路径行为钉住（URL 解析边界）', async () => {
+    // URL 解析器把 //gomoku 视为主机名，pathname 收敛为 / → 命中大厅而非游戏挂载（防绕过）
+    const lobby = await get(port, '//gomoku/');
+    assert.strictEqual(lobby.status, 200);
+    assert.ok(lobby.text.includes('聚会游戏合集'), '//gomoku/ 应落到大厅');
+    assert.strictEqual((await get(port, '/gomoku//')).status, 404, '挂载内空段路径不应命中静态文件');
   });
 
   console.log(`\n结果: PASS ${passed} / FAIL ${failed}`);

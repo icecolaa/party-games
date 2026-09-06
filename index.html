@@ -71,6 +71,19 @@
     opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 99;
   }
   #toast.show { opacity: 1; }
+  .coach-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .coach-title { font-size: 14px; color: #c6cedb; font-weight: 600; }
+  #coach-log { max-height: 200px; overflow: auto; }
+  .coach-item {
+    padding: 6px 9px; background: rgba(255,255,255,.045); border-radius: 8px;
+    margin-bottom: 6px; font-size: 13px; line-height: 1.55; color: #c9d2e0;
+  }
+  .coach-item.latest { background: rgba(240,180,41,.12); border: 1px solid rgba(240,180,41,.35); color: #eae2c8; }
+  .coach-item.warn { border-left: 3px solid #e67e22; }
+  .coach-item.good { border-left: 3px solid #2ecc71; }
+  details.coach-lesson { margin-top: 8px; }
+  details.coach-lesson summary { cursor: pointer; font-size: 12px; color: #9aa5b5; }
+  details.coach-lesson p { margin: 6px 0 0; font-size: 12px; color: #aab4c4; }
   .panel { flex: 0 1 300px; min-width: 260px; display: flex; flex-direction: column; gap: 14px; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
   .status { display: flex; align-items: center; gap: 12px; min-height: 30px; font-size: 16px; font-weight: 600; }
@@ -155,6 +168,21 @@
           <div class="s"><div class="num" id="score-d">0</div><div class="lab">平局</div></div>
           <div class="s"><div class="num" id="score-a">0</div><div class="lab">AI 获胜</div></div>
         </div>
+      </div>
+      <div class="card" id="coach-card">
+        <div class="coach-head">
+          <span class="coach-title">🎓 教练</span>
+          <button id="coach-toggle" class="mini-ghost">提示：开</button>
+        </div>
+        <div id="coach-log"></div>
+        <details class="coach-lesson">
+          <summary>棋型小课堂（点开学习）</summary>
+          <p><b>活二 → 活三 → 活四</b>：两端都空的同色连子。活三再进一步就是活四，两个成五点，基本必胜。</p>
+          <p><b>冲四</b>：差一子成五、但只有一头能成。对方必须立刻挡，否则直接输。</p>
+          <p><b>双活三</b>：一手做出两条活三，对方只能堵一条。</p>
+          <p><b>四三</b>：一手同时做出冲四和活三，几乎锁定胜局。</p>
+          <p><b>先手</b>：让对方不停被迫防守、没空进攻。开局抢活二、卡住要点就是在争先手。</p>
+        </details>
       </div>
       <div class="card">
         <div class="seg-label">游戏模式</div>
@@ -568,6 +596,7 @@
         try { sessionStorage.setItem('gomoku_online_seat', JSON.stringify({ code: online.code, pid: online.pid, role: newRole })); } catch (e) {}
       }
     }
+    var prevBoard = S.board, prevLen = S.history.length;
     S.board = s.board;
     S.history = s.history;
     S.over = !!s.over;
@@ -581,6 +610,19 @@
     S.human = myColor; S.ai = oppColor;
     var oppOnline = online.role === 'black' ? s.blackOnline : s.whiteOnline;
 
+    // 教练：点评最新一子（在覆盖旧棋盘前先取旧局面）
+    if (coachEnabled && s.history.length > prevLen) {
+      var nm = s.history[s.history.length - 1];
+      if (nm.p === myColor) {
+        coachOnPlayerMove(nm.x, nm.y,
+          coachFivePoints(prevBoard, nm.p),
+          coachFivePoints(prevBoard, oppColor),
+          s.board);
+      } else {
+        coachOnOpponentMove(nm.x, nm.y, s.board);
+      }
+    }
+
     if (s.over) {
       if (s.winner === 0) { bannerText.textContent = '🤝 平局'; setStatus('对局结束：平局'); }
       else if (s.winner === myColor) { bannerText.textContent = '🎉 你赢了！'; setStatus('恭喜，你获胜了！'); setIcon(myColor); }
@@ -589,6 +631,11 @@
         overAnnouncedVersion = s.version;
         bannerEl.classList.remove('hidden');
         $('banner-btn').textContent = '再战（互换黑白）';
+        if (coachEnabled) {
+          if (s.winner === 0) coachLog('🤝 联机平局——双方都没犯错，下一局更精彩。', 'good');
+          else if (s.winner === myColor) coachLog('🏁 联机胜利！把你研究过的套路再用出来。', 'good');
+          else coachLog('📖 复盘：' + coachReviewLoss(s.history, s.winner).join(' '), 'warn');
+        }
       }
     } else {
       bannerEl.classList.add('hidden');
@@ -666,20 +713,224 @@
     } else { toast('房号：' + online.code); }
   });
 
+  /* ---------------- 教练 ---------------- */
+  var coachEnabled = true;
+  try { coachEnabled = localStorage.getItem('gomoku_coach') !== '0'; } catch (e) {}
+  var coachStats = { w: 0, l: 0 };
+  try {
+    var csSaved = JSON.parse(localStorage.getItem('gomoku_coach_stats') || 'null');
+    if (csSaved && typeof csSaved.w === 'number' && typeof csSaved.l === 'number') coachStats = csSaved;
+  } catch (e) {}
+  var coachHistory = [], praiseIndex = 0, toastCoachTimer = null;
+  var COACH_DIRS = [[1, 0], [0, 1], [1, 1], [1, -1]];
+  var COACH_PRAISE = [
+    '这手棋很有想法，继续保持！',
+    '不错，你已经会主动创造威胁了。',
+    '稳！对方现在得跟着你走。',
+    '好节奏，先手在你手里。',
+    '这步棋下得果断，赞一个。'
+  ];
+  var COACH_COMFORT = [
+    '输一局不亏——复盘一条教训就值回票价。',
+    '对手赢得并不轻松，你已经在正确的路上。',
+    '记住这次踩的坑，下一局就是你的。',
+    '棋力是输出来的，这局的经验最值钱。',
+    '深呼吸，换个开局思路再战一局！'
+  ];
+
+  function saveCoachStats() {
+    try { localStorage.setItem('gomoku_coach_stats', JSON.stringify(coachStats)); } catch (e) {}
+  }
+  function coachLog(msg, cls) {
+    coachHistory.unshift({ msg: msg, cls: cls || '' });
+    if (coachHistory.length > 8) coachHistory.pop();
+    $('coach-log').innerHTML = coachHistory.map(function (it, i) {
+      return '<div class="coach-item' + (i === 0 ? ' latest' : '') + (it.cls ? ' ' + it.cls : '') + '">' + it.msg + '</div>';
+    }).join('');
+  }
+  $('coach-toggle').addEventListener('click', function () {
+    coachEnabled = !coachEnabled;
+    try { localStorage.setItem('gomoku_coach', coachEnabled ? '1' : '0'); } catch (e) {}
+    $('coach-toggle').textContent = coachEnabled ? '提示：开' : '提示：关';
+    coachLog(coachEnabled ? '🎓 教练已上线，落子前会帮你避开大坑。' : '教练实时提示已关闭，终局复盘仍会保留。');
+  });
+  coachToggleUI2();
+  function coachToggleUI2() { $('coach-toggle').textContent = coachEnabled ? '提示：开' : '提示：关'; }
+  coachLog('🎓 教练已上线：实时提醒你避开大坑、点评好棋，输了帮你复盘找败因。');
+
+  var COACH_SHAPES = [
+    ['11111', 'five'],
+    ['011110', 'liveFour'],
+    ['11110', 'rushFour'], ['01111', 'rushFour'], ['11011', 'rushFour'], ['10111', 'rushFour'], ['11101', 'rushFour'],
+    ['01110', 'liveThree'], ['010110', 'liveThree'], ['011010', 'liveThree'],
+    ['001100', 'liveTwo'], ['011000', 'liveTwo'], ['000110', 'liveTwo'],
+    ['010100', 'liveTwo'], ['001010', 'liveTwo'], ['010010', 'liveTwo'],
+    ['10011', 'sleepThree'], ['11001', 'sleepThree'], ['10101', 'sleepThree'],
+    ['11100', 'sleepThree'], ['00111', 'sleepThree'], ['11010', 'sleepThree'], ['01011', 'sleepThree']
+  ];
+
+  function coachClassifyDir(board, x, y, dx, dy, p) {
+    var s = '';
+    for (var i = -4; i <= 4; i++) {
+      if (i === 0) { s += '1'; continue; }
+      var nx = x + dx * i, ny = y + dy * i;
+      if (!G.inBoard(nx, ny)) { s += '2'; continue; }
+      var v = board[G.idx(nx, ny)];
+      s += v === EMPTY ? '0' : (v === p ? '1' : '2');
+    }
+    for (var k = 0; k < COACH_SHAPES.length; k++) {
+      if (s.indexOf(COACH_SHAPES[k][0]) !== -1) return COACH_SHAPES[k][1];
+    }
+    return 'none';
+  }
+
+  // 落子后（board 已含该子）按方向统计棋型
+  function coachShape(board, x, y, p) {
+    var c = { five: 0, liveFour: 0, rushFour: 0, liveThree: 0, sleepThree: 0, liveTwo: 0 };
+    for (var d = 0; d < COACH_DIRS.length; d++) {
+      var kind = coachClassifyDir(board, x, y, COACH_DIRS[d][0], COACH_DIRS[d][1], p);
+      if (c[kind] !== undefined) c[kind]++;
+    }
+    return c;
+  }
+
+  function coachShapeText(c) {
+    if (c.five) return { key: 'five', text: '成五！一锤定音。' };
+    if (c.liveFour) return { key: 'liveFour', text: '活四已成，两个成五点防不住！' };
+    if (c.rushFour >= 2) return { key: 'doubleRush', text: '双冲四，两头都是杀点。' };
+    if (c.rushFour && c.liveThree) return { key: 'fourThree', text: '四三齐发，基本锁定胜局。' };
+    if (c.rushFour) return { key: 'rushFour', text: '冲四，逼对方立刻应手。' };
+    if (c.liveThree >= 2) return { key: 'doubleThree', text: '双活三，两条线只能堵一条。' };
+    if (c.liveThree) return { key: 'liveThree', text: '活三成型，不挡下一步就是活四。' };
+    if (c.liveTwo) return { key: 'liveTwo', text: '活二稳步生长。' };
+    if (c.sleepThree) return { key: 'sleepThree', text: '眠三先存着，配合别的线还有用。' };
+    return null;
+  }
+
+  // p 再走一步即成五的全部点位
+  function coachFivePoints(board, p) {
+    var pts = [];
+    for (var y = 0; y < N; y++) {
+      for (var x = 0; x < N; x++) {
+        if (board[G.idx(x, y)] !== EMPTY) continue;
+        var hit = false;
+        for (var d = 0; d < COACH_DIRS.length && !hit; d++) {
+          var s = '';
+          for (var i = -4; i <= 4; i++) {
+            if (i === 0) { s += '1'; continue; }
+            var nx = x + COACH_DIRS[d][0] * i, ny = y + COACH_DIRS[d][1] * i;
+            if (!G.inBoard(nx, ny)) { s += '2'; continue; }
+            var v = board[G.idx(nx, ny)];
+            s += v === EMPTY ? '0' : (v === p ? '1' : '2');
+          }
+          if (s.indexOf('11111') !== -1) hit = true;
+        }
+        if (hit) pts.push({ x: x, y: y });
+      }
+    }
+    return pts;
+  }
+
+  // 玩家（或联机中自己）落子后点评；board 为落子后的棋盘
+  function coachOnPlayerMove(x, y, preMyWins, preOppWins, board) {
+    if (!coachEnabled) return;
+    var p = board[G.idx(x, y)];
+    var shape = coachShape(board, x, y, p);
+    var st = coachShapeText(shape);
+    if (preMyWins.length) {
+      coachLog('💡 复盘提示：其实你有直接取胜点（' + coordName(preMyWins[0].x, preMyWins[0].y) + '）——下次落子前先看看自己能不能连五。', 'warn');
+      return;
+    }
+    if (preOppWins.length) {
+      coachLog('⚠️ 对方已有成五点（' + coordName(preOppWins[0].x, preOppWins[0].y) + '），这手没挡，非常危险！', 'warn');
+      return;
+    }
+    if (st) {
+      var strong = ['liveFour', 'fourThree', 'doubleRush', 'doubleThree'].indexOf(st.key) >= 0;
+      coachLog((strong ? '🌟 ' : '👍 ') + st.text + (strong ? ' ' + COACH_PRAISE[praiseIndex++ % COACH_PRAISE.length] : ''));
+    } else if (S.history.length % 5 === 0) {
+      coachLog('💭 ' + COACH_PRAISE[praiseIndex++ % COACH_PRAISE.length]);
+    }
+  }
+
+  // 对手（AI 或联机对方）落子后，提示其形成的威胁
+  function coachOnOpponentMove(x, y, board) {
+    if (!coachEnabled) return;
+    var p = board[G.idx(x, y)];
+    var shape = coachShape(board, x, y, p);
+    var pts = coachFivePoints(board, p);
+    if (shape.liveFour) {
+      coachLog('🤖 对方在 ' + coordName(x, y) + ' 做出活四，除非你马上成五，否则难救。', 'warn');
+    } else if (shape.rushFour >= 2) {
+      coachLog('🤖 对方在 ' + coordName(x, y) + ' 做出双冲四，防不过来了。', 'warn');
+    } else if (shape.rushFour) {
+      coachLog('🔔 对方在 ' + coordName(x, y) + ' 冲四！必须挡在 ' + (pts.length ? coordName(pts[0].x, pts[0].y) : '成五点') + '。', 'warn');
+    } else if (shape.liveThree || shape.rushFour + shape.liveThree > 0) {
+      coachLog('🔔 对方在 ' + coordName(x, y) + ' 做出活三，现在防守代价最小。', 'warn');
+    }
+  }
+
+  // 输棋复盘：错过的取胜点 → 双杀转折点 → 未防守的威胁
+  function coachReviewLoss(history, winnerColor) {
+    var board = G.createBoard(), i;
+    var missed = null;
+    for (i = 0; i < history.length; i++) {
+      var m = history[i];
+      if (m.p !== winnerColor && !missed) {
+        var pts = coachFivePoints(board, m.p);
+        if (pts.length) missed = { idx: i + 1, pt: pts[0] };
+      }
+      board[G.idx(m.x, m.y)] = m.p;
+    }
+
+    board = G.createBoard();
+    var fatal = null, unblocked = null;
+    for (i = 0; i < history.length; i++) {
+      var mm = history[i];
+      board[G.idx(mm.x, mm.y)] = mm.p;
+      if (mm.p !== winnerColor) continue;
+      var wpts = coachFivePoints(board, winnerColor);
+      if (wpts.length >= 2 && !fatal) {
+        fatal = { idx: i + 1, at: { x: mm.x, y: mm.y }, pts: wpts };
+      }
+      if (wpts.length === 1 && !unblocked) {
+        var nxt = history[i + 1];
+        if (!nxt) break;
+        if (nxt.x !== wpts[0].x || nxt.y !== wpts[0].y) unblocked = { idx: i + 1, pt: wpts[0] };
+      }
+      if (fatal && unblocked) break;
+    }
+
+    var msgs = [];
+    if (missed) msgs.push('你曾在第 ' + missed.idx + ' 手有直接取胜点 ' + coordName(missed.pt.x, missed.pt.y) + '，这种机会别放过。');
+    if (fatal) msgs.push('第 ' + fatal.idx + ' 手对方在 ' + coordName(fatal.at.x, fatal.at.y) + ' 形成双杀（' + coordName(fatal.pts[0].x, fatal.pts[0].y) + ' 与 ' + coordName(fatal.pts[1].x, fatal.pts[1].y) + ' 两处成五），从此无解——要在对方活三阶段就干扰。');
+    else if (unblocked) msgs.push('第 ' + unblocked.idx + ' 手对方威胁成五（' + coordName(unblocked.pt.x, unblocked.pt.y) + '），你没能挡住，这是败因。');
+    if (!msgs.length) msgs.push('对手靠连续活三稳步扩大优势——下次在对方活三刚成型时就出动干扰。');
+    return msgs;
+  }
+
   /* ---------------- 对局流程 ---------------- */
 
   function doMove(x, y, p) {
     hideConfirmBar();
     if (mode === 'online') { onlineMove(x, y); return; }
+    var preMyWins = coachEnabled ? coachFivePoints(S.board, p) : [];
+    var preOppWins = coachEnabled ? coachFivePoints(S.board, G.other(p)) : [];
     S.board[G.idx(x, y)] = p;
     S.history.push({ x: x, y: y, p: p });
     S.lastMove = { x: x, y: y, p: p };
     S.hover = null;
 
     var win = G.getWinLine(S.board, x, y);
-    if (win) { S.over = true; S.winCells = win; endGame(p); render(); return; }
+    if (win) {
+      S.over = true; S.winCells = win;
+      if (coachEnabled && p === S.human) coachLog('🏁 成五获胜，干净利落！', 'good');
+      endGame(p); render(); return;
+    }
     if (G.isBoardFull(S.board)) { S.over = true; endGame(0); render(); return; }
 
+    if (p === S.human) coachOnPlayerMove(x, y, preMyWins, preOppWins, S.board);
+    else coachOnOpponentMove(x, y, S.board);
     S.turn = G.other(p);
     if (S.turn === S.ai) scheduleAI();
     else { setIcon(S.human); setStatus('轮到你落子'); }
@@ -715,16 +966,23 @@
       scores.d++;
       bannerText.textContent = '🤝 平局';
       setStatus('平局，棋盘已下满');
+      coachLog('🤝 平局——没给对手可乘之机，防守很扎实。', 'good');
     } else if (winner === S.human) {
       scores.h++;
       bannerText.textContent = '🎉 你赢了！';
       setStatus('恭喜，你获胜了！');
       setIcon(winner);
+      coachStats.w++; saveCoachStats();
+      coachLog('🏁 这是你对 AI 的第 ' + coachStats.w + ' 胜！把这套思路保持住，换大师级试试。', 'good');
     } else {
       scores.a++;
       bannerText.textContent = '🤖 AI 获胜';
-      setStatus('AI 获胜，再接再厉！');
+      setStatus('AI 获胜，看下方复盘找败因');
       setIcon(winner);
+      coachStats.l++; saveCoachStats();
+      var rev = coachReviewLoss(S.history, S.ai);
+      coachLog('📖 复盘：' + rev.join(' '), 'warn');
+      coachLog(COACH_COMFORT[coachStats.l % COACH_COMFORT.length] + '（对 AI 战绩 ' + coachStats.w + ' 胜 ' + coachStats.l + ' 负）', 'good');
     }
     saveScores();
     bannerEl.classList.remove('hidden');

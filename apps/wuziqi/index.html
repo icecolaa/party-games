@@ -841,6 +841,7 @@
     if (!coachEnabled) return;
     var p = board[G.idx(x, y)];
     var pts = coachFivePoints(board, p);
+    var shape = G.shapeCounts(board, x, y, p);
     if (shape.liveFour) {
       coachLog('🤖 对方在 ' + coordName(x, y) + ' 做出活四，除非你马上成五，否则难救。', 'warn');
     } else if (shape.rushFour >= 2) {

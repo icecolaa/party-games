@@ -1,12 +1,16 @@
 {
   "name": "wuziqi",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "description": "智能五子棋：人机对战 + 联机双人对战（纯 Node，零依赖）",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node test.js && node test-mp.js"
+    "test": "node test.js && node test-mp.js",
+    "test:ui": "node test-ui.js"
+  },
+  "devDependencies": {
+    "jsdom": "^30.0.1"
   },
   "engines": {
     "node": ">=18"

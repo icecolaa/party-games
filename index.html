@@ -42,14 +42,15 @@
   .confirm-bar {
     position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
     display: flex; gap: 10px; padding: 8px 10px;
-    background: rgba(12,16,26,.88); backdrop-filter: blur(6px);
+    background: rgba(15,20,30,.94); backdrop-filter: blur(6px);
     border: 1px solid rgba(255,255,255,.14); border-radius: 14px;
     box-shadow: 0 10px 30px rgba(0,0,0,.5);
   }
   .confirm-bar.hidden { display: none; }
-  .confirm-bar button { flex: 0 0 auto; padding: 8px 18px; font-size: 14px; }
+  .confirm-bar button { flex: 0 0 auto; padding: 8px 18px; font-size: 14px; position: relative; z-index: 1; }
   .confirm-bar .primary { background: var(--accent); color: #231a05; }
-  .confirm-bar .cancel { background: rgba(255,255,255,.1); color: #e8ecf3; border: 1px solid var(--line); }
+  /* 取消按钮必须用实色：iOS WebView 下半透明背景在 backdrop-filter 父层内会被画丢 */
+  .confirm-bar .cancel { background: #39415a; color: #e8ecf3; border: 1px solid rgba(255,255,255,.25); }
   .join-row { display: flex; gap: 8px; }
   .join-row input {
     flex: 1; min-width: 0; background: #232a3a; color: #e8ecf3;

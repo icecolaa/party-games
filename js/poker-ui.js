@@ -44,7 +44,7 @@ function isNarrowViewport() {
 }
 
 function tableParams() {
-  return isNarrowViewport() ? { rx: 33, ry: 40 } : { rx: 41, ry: 37 };
+  return isNarrowViewport() ? { rx: 36, ry: 44 } : { rx: 41, ry: 37 };
 }
 
 /* 视口跨档时重建座位表；并同步 body.m-viewport 供样式与测试使用 */
@@ -65,11 +65,32 @@ function buildTableOnce() {
 
   const L = Math.max(2, G.players.length);
   const { rx, ry } = tableParams();
+  const narrow = isNarrowViewport();
   const cx = 50, cy = 50;
+  // 手机端：你的座位固定底部正中，其余玩家沿顶部弧线排开——公共牌区永远无遮挡
+  const myIdx = NET.isNet ? NET.meIdx : 0;
+  const oppCount = L - 1;
+  let opp = 0;
   for (let i = 0; i < L; i++) {
-    const ang = (90 + i * 360 / L) * Math.PI / 180;
-    const x = cx + rx * Math.cos(ang);
-    const y = cy + ry * Math.sin(ang);
+    let x, y;
+    if (narrow && i === myIdx) {
+      x = 50; y = 88;
+    } else if (narrow) {
+      // 顶部最多一排 4 个，超出的放第二排（两排都在公共牌区上方）
+      const idx2 = opp++;
+      const row1Count = Math.ceil(oppCount / 2);
+      let m, r, yy;
+      if (oppCount <= 4) { m = oppCount; r = idx2; yy = 14; }
+      else if (idx2 < row1Count) { m = row1Count; r = idx2; yy = 9; }
+      else { m = oppCount - row1Count; r = idx2 - row1Count; yy = 27; }
+      const spacing = Math.min(22, 88 / m);
+      x = 50 + (r - (m - 1) / 2) * spacing;
+      y = yy;
+    } else {
+      const ang = (90 + i * 360 / L) * Math.PI / 180;
+      x = cx + rx * Math.cos(ang);
+      y = cy + ry * Math.sin(ang);
+    }
 
     const seat = document.createElement('div');
     seat.className = 'seat' + (y < cy ? ' flip' : '');
@@ -78,9 +99,11 @@ function buildTableOnce() {
     seat.innerHTML =
       '<div class="cards"></div>' +
       '<div class="plate">' +
+        '<span class="p-dealer">D</span>' +
         '<div class="p-top"><span class="p-ava"></span><span class="p-name"></span></div>' +
         '<div class="p-chips"></div>' +
         '<div class="p-status"></div>' +
+        '<div class="p-bet"></div>' +
       '</div>';
     seatsBox.appendChild(seat);
     UI.seatEls.push(seat);
@@ -170,10 +193,18 @@ function renderAll() {
     st.classList.toggle('think', G.turnIdx === i && !p.isHuman && !p.folded && !p.allIn && !p.out);
 
     const bet = UI.betEls[i];
-    if (p.bet > 0) { bet.style.display = 'block'; bet.textContent = '🪙 ' + fmt(p.bet); }
-    else bet.style.display = 'none';
+    if (bet) {
+      if (p.bet > 0) { bet.style.display = 'block'; bet.textContent = '🪙 ' + fmt(p.bet); }
+      else bet.style.display = 'none';
+    }
 
-    UI.dealerEls[i].style.display = (G.dealerIdx === i && !p.out) ? 'flex' : 'none';
+    const db = UI.dealerEls[i];
+    if (db) db.style.display = (G.dealerIdx === i && !p.out) ? 'flex' : 'none';
+    const pd = el.querySelector('.p-dealer');
+    if (pd) pd.classList.toggle('on', G.dealerIdx === i && !p.out);
+    const pb = el.querySelector('.p-bet');
+    if (pb) pb.classList.toggle('on', p.bet > 0 && !p.out);
+    if (pb) pb.textContent = p.bet > 0 ? '下注 ' + fmt(p.bet) : '';
   }
   $('potChips').textContent = fmt(G.pot);
   renderBoard();

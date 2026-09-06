@@ -187,6 +187,15 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
     assert(left >= 5 && left <= 95, `座位${i} left=${left}% 应在 [5,95] 内`);
     assert(top >= 6 && top <= 94, `座位${i} top=${top}% 应在 [6,94] 内`);
   }
+  // 回归：任何座位铭牌都不得与中央公共牌区重叠（老法师/鲨鱼哥挡牌问题）
+  const board = { x1: 22, x2: 78, y1: 40, y2: 60 }; // 手机公共牌区估算范围
+  for (let i = 0; i < UI.seatEls.length; i++) {
+    const left = parseFloat(UI.seatEls[i].style.left);
+    const top = parseFloat(UI.seatEls[i].style.top);
+    const overlap = left - 10.8 < board.x2 && left + 10.8 > board.x1 &&
+                    top - 6 < board.y2 && top + 6 > board.y1;
+    assert(!overlap, `座位${i} 铭牌 (${left.toFixed(1)},${top.toFixed(1)}) 不应遮挡公共牌区`);
+  }
   const xs = UI.seatEls.map(el => parseFloat(el.style.left));
   const narrowSpan = Math.max(...xs) - Math.min(...xs);
   assert(narrowSpan < wideSpan, `窄屏椭圆应比横向更窄（${narrowSpan.toFixed(1)}% < ${wideSpan.toFixed(1)}%）`);

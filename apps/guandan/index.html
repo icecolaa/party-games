@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>掼蛋 · Guandan</title>
+<link rel="stylesheet" href="css/style.css?v=1.0.0">
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="logo">🃏 掼蛋</div>
+    <div id="levelInfo" class="level-info">打 2</div>
+    <div class="top-actions">
+      <button id="logToggle" class="ghost" title="对局记录">📜</button>
+      <button id="rulesBtn" class="ghost">玩法</button>
+      <button id="newGameBtn" class="ghost">重开</button>
+    </div>
+  </header>
+
+  <main id="tableZone">
+    <div id="table">
+      <!-- 对手区（上） -->
+      <div id="seatTop" class="seat seat-top">
+        <div class="seat-info">
+          <span class="avatar">🤖</span>
+          <span class="name">等待</span>
+          <span class="count">0</span>
+        </div>
+        <div class="played" id="playedTop"></div>
+      </div>
+
+      <!-- 左右对手 -->
+      <div id="seatLeft" class="seat seat-left">
+        <div class="seat-info">
+          <span class="avatar">🤖</span>
+          <span class="name">等待</span>
+          <span class="count">0</span>
+        </div>
+        <div class="played" id="playedLeft"></div>
+      </div>
+      <div id="seatRight" class="seat seat-right">
+        <div class="seat-info">
+          <span class="avatar">🤖</span>
+          <span class="name">等待</span>
+          <span class="count">0</span>
+        </div>
+        <div class="played" id="playedRight"></div>
+      </div>
+
+      <!-- 中央牌桌 -->
+      <div id="center">
+        <div id="tablePlayed"></div>
+        <div id="turnHint">等待开始</div>
+      </div>
+
+      <!-- 自己 -->
+      <div id="seatSelf" class="seat seat-self">
+        <div id="selfPlayed" class="played"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer id="actionBar">
+    <div id="handArea">
+      <div id="handCards"></div>
+    </div>
+    <div id="actButtons">
+      <button id="btnPass" class="act pass" disabled>不要</button>
+      <button id="btnPlay" class="act play" disabled>出牌</button>
+      <button id="btnHint" class="act hint" disabled>提示</button>
+    </div>
+  </footer>
+
+  <!-- 大厅 / 设置 -->
+  <div id="setupOverlay" class="overlay">
+    <div class="panel">
+      <h2>🃏 掼蛋</h2>
+      <p class="sub">4 人两队（对家为队友）· 两副牌 · 逢人配 · 打到 A 获胜</p>
+
+      <div class="field">
+        <label>游戏模式</label>
+        <div class="seg">
+          <button id="modeLocal" class="seg-btn active">人机对战</button>
+          <button id="modeNet" class="seg-btn">联机对战</button>
+        </div>
+      </div>
+
+      <div id="localForm">
+        <div class="field">
+          <label>你的昵称</label>
+          <input id="localName" maxlength="10" value="我">
+        </div>
+        <div class="field">
+          <label>AI 难度</label>
+          <div class="seg" id="diffSeg">
+            <button data-d="easy" class="seg-btn">简单</button>
+            <button data-d="normal" class="seg-btn active">普通</button>
+            <button data-d="hard" class="seg-btn">困难</button>
+          </div>
+        </div>
+        <button id="startLocal" class="primary">开始人机对战</button>
+      </div>
+
+      <div id="netForm" class="hidden">
+        <div class="field">
+          <label>服务器地址</label>
+          <input id="netAddr" placeholder="ws://127.0.0.1:8700">
+        </div>
+        <div class="field">
+          <label>你的昵称</label>
+          <input id="netName" maxlength="10" value="我">
+        </div>
+        <div class="btn-row">
+          <button id="netCreate" class="primary">创建房间</button>
+          <input id="netCode" class="code-input" maxlength="4" placeholder="房间号">
+          <button id="netJoin" class="primary">加入</button>
+        </div>
+        <p class="hint">创建房间后把 4 位房间号告诉好友，一起凑齐 4 人（房主可加 AI 补位）</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 联机大厅 -->
+  <div id="lobbyOverlay" class="overlay hidden">
+    <div class="panel">
+      <h2>房间 <span id="lobbyCode" class="code"></span></h2>
+      <div id="lobbyPlayers"></div>
+      <div id="lobbyConfig">
+        <div class="field">
+          <label>AI 补位</label>
+          <select id="cfgAiFill">
+            <option value="0">0（纯真人）</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>AI 难度</label>
+          <select id="cfgDiff">
+            <option value="easy">简单</option>
+            <option value="normal">普通</option>
+            <option value="hard">困难</option>
+          </select>
+        </div>
+      </div>
+      <p id="lobbyHint" class="hint"></p>
+      <button id="lobbyStart" class="primary">开始游戏</button>
+      <button id="lobbyLeave" class="ghost">离开房间</button>
+    </div>
+  </div>
+
+  <!-- 结算 -->
+  <div id="resultOverlay" class="overlay hidden">
+    <div class="panel">
+      <h2 id="resultTitle">本局结束</h2>
+      <div id="resultBody"></div>
+      <button id="resultNext" class="primary">下一局</button>
+    </div>
+  </div>
+
+  <div id="logPanel" class="hidden">
+    <div class="log-title">对局记录 <button id="logClose" class="ghost">✕</button></div>
+    <div id="logList"></div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<script src="js/gd-core.js"></script>
+<script src="js/gd-ai.js"></script>
+<script src="js/gd-game.js"></script>
+<script src="js/gd-ui.js"></script>
+</body>
+</html>

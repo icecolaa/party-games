@@ -10,9 +10,10 @@
 | --- | --- | --- |
 | ⚫ 五子棋 | ✅ 可开玩 | 人机三档棋力 + 联机双人对战 |
 | 🂡 德州扑克 | ✅ 可开玩 | 单机 AI / 双人热座 / 联网房间 2~8 人 |
+| 🃏 掼蛋 | ✅ 可开玩 | 4 人两队人机 + 联机，两副牌逢人配 |
 | 🎲 摇色子 | 🚧 规划中 | |
 | 🀄 麻将 | 🚧 规划中 | |
-| 🃏 斗地主 | 🚧 规划中 | |
+| 🎴 斗地主 | 🚧 规划中 | |
 | ✈️ 飞行棋 | 🚧 规划中 | |
 | ✌️ 石头剪刀布 | 🚧 规划中 | |
 
@@ -31,7 +32,7 @@ npm start          # 启动统一服务器，默认 http://127.0.0.1:8600/
 平台以 `npm start` 启动（服务器已按 `0.0.0.0` 绑定，`PORT` 由平台注入）。上传约定：
 
 - 打包**仓库根目录整体**为一个应用（`zip` / `tar.gz`，排除 `.git`、`node_modules`）
-- 打包时**必须排除** `apps/wuziqi/package.json` 与 `apps/dezhou-poker/package.json`
+- 打包时**必须排除** `apps/wuziqi/package.json`、`apps/dezhou-poker/package.json`、`apps/guandan/package.json`
   （它们仅用于本地独立运行；平台按 package.json 识别产品，多出一个会报
   `application_ambiguous` 拒绝部署）
 - 若平台要求选择「这次要发布哪一个」，选择**根目录产品**（统一入口：游戏大厅 + 全部游戏），
@@ -45,6 +46,7 @@ server.js                 统一入口：游戏大厅 + 各游戏路由挂载
 apps/home/                游戏大厅页面
 apps/wuziqi/              五子棋（人机 + 联机）
 apps/dezhou-poker/        德州扑克（单机 / 热座 / 联网）
+apps/guandan/             掼蛋（人机 + 联机，4 人两队）
 ```
 
 ## License

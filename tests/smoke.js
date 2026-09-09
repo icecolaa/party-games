@@ -211,6 +211,41 @@ async function main() {
     ws.close();
   });
 
+  console.log('— 掼蛋挂载 —');
+
+  await t('/guandan 301 重定向到 /guandan/', async () => {
+    const r = await get(port, '/guandan');
+    assert.strictEqual(r.status, 301);
+    assert.strictEqual(r.headers.location, '/guandan/');
+  });
+
+  await t('/guandan/ 返回掼蛋页面', async () => {
+    const r = await get(port, '/guandan/');
+    assert.strictEqual(r.status, 200);
+    assert.ok(r.text.includes('掼蛋'));
+  });
+
+  await t('/guandan/js/gd-core.js 静态资源可访问', async () => {
+    const r = await get(port, '/guandan/js/gd-core.js');
+    assert.strictEqual(r.status, 200);
+    assert.ok(r.text.length > 1000);
+  });
+
+  await t('WebSocket /guandan/ws 建房成功', async () => {
+    const ws = await wsConnect(port, '/guandan/ws');
+    ws.send({ t: 'create', name: '冒烟' });
+    const msg = await ws.next();
+    assert.strictEqual(msg.t, 'room');
+    assert.ok(msg.room.code);
+    ws.close();
+  });
+
+  await t('大厅包含掼蛋入口链接', async () => {
+    const r = await get(port, '/');
+    assert.ok(r.text.includes('href="/guandan/"'), 'missing /guandan/ link');
+    assert.ok(r.text.includes('掼蛋'), 'missing 掼蛋 card');
+  });
+
   console.log('— 健壮性 —');
 
   await t('null 字节 / 非法编码路径返回 400/404 且服务器存活', async () => {

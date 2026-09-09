@@ -4,6 +4,7 @@
  *  - /         游戏大厅
  *  - /gomoku/  五子棋（静态页 + /gomoku/api/* 联机接口）
  *  - /poker/   德州扑克（静态页 + /poker/ws WebSocket 联机）
+ *  - /guandan/ 掼蛋（静态页 + /guandan/ws WebSocket 联机）
  * 运行：node server.js  （PORT 环境变量改端口，默认 8600）
  * ============================================================ */
 
@@ -17,6 +18,7 @@ const PORT = Number(process.env.PORT) || 8600;
 
 const gomoku = require('./apps/wuziqi/server.js');
 const poker = require('./apps/dezhou-poker/server.js');
+const guandan = require('./apps/guandan/server.js');
 
 /* 游戏注册表：新增聚会游戏时在 apps/ 下建目录并在登记一项即可。
  * mount   浏览器访问前缀，如 /gomoku/
@@ -25,7 +27,8 @@ const poker = require('./apps/dezhou-poker/server.js');
  * upgrade 可选：处理该前缀下的 WebSocket 升级请求 */
 const GAMES = [
   { id: 'gomoku', mount: '/gomoku', root: path.join(ROOT, 'apps', 'wuziqi'), api: gomoku.handleApi },
-  { id: 'poker', mount: '/poker', root: path.join(ROOT, 'apps', 'dezhou-poker'), upgrade: poker.handleUpgrade }
+  { id: 'poker', mount: '/poker', root: path.join(ROOT, 'apps', 'dezhou-poker'), upgrade: poker.handleUpgrade },
+  { id: 'guandan', mount: '/guandan', root: path.join(ROOT, 'apps', 'guandan'), upgrade: guandan.handleUpgrade }
 ];
 
 const MIME = {

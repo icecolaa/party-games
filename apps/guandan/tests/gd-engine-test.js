@@ -162,6 +162,68 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     ok(Game.G.over === true && Game.G.winner === 0, '打 A 升级到位即获胜');
   }
 
+  section('— 回合推进次序 —');
+  {
+    // 构造：座位 2 首出即出完，3 与 0 依次过牌 → 一轮结束。
+    // 规则：下一轮由首出者(2)的下一位未出完者(3)首出。
+    Game.startGame({
+      mode: 'local', difficulty: 'normal',
+      players: [{ name: 'A', isHuman: false }, { name: 'B', isHuman: false },
+        { name: 'C', isHuman: false }, { name: 'D', isHuman: false }],
+    });
+    const G = Game.G;
+    G.hooks.log = () => {};
+    G.hooks.state = () => {};
+    G.fastMode = true;
+    G.phase = 'playing';
+    G.players.forEach((p) => { p.finished = false; p.rank = 0; });
+    G.finished = [];
+    G.players[0].hand = C.sortCards([{ id: 'r1', rank: 4, suit: 0 }, { id: 'r2', rank: 4, suit: 1 }], 2);
+    G.players[1].hand = C.sortCards([{ id: 'r3', rank: 6, suit: 0 }, { id: 'r4', rank: 6, suit: 1 }], 2);
+    G.players[2].hand = C.sortCards([{ id: 'r5', rank: 9, suit: 0 }], 2);
+    G.players[3].hand = C.sortCards([{ id: 'r6', rank: 8, suit: 0 }, { id: 'r7', rank: 8, suit: 1 }], 2);
+    G.turnSeat = 2;
+    G.lastPlay = null;
+    G.passCount = 0;
+    let r = Game.playCards(2, ['r5']);
+    ok(r.ok, '座位 2 出完手牌: ' + (r.error || ''));
+    ok(G.players[2].finished, '座位 2 已出完');
+    ok(G.turnSeat === 3, '2 出完后按座次轮到 3，实际 ' + G.turnSeat);
+    r = Game.pass(3);
+    ok(r.ok, '座位 3 过: ' + (r.error || ''));
+    ok(G.turnSeat === 0, '3 过后轮到 0，实际 ' + G.turnSeat);
+    r = Game.pass(0);
+    ok(r.ok, '座位 0 过: ' + (r.error || ''));
+    ok(G.turnSeat === 1, '0 过后轮到尚未行动的 1，实际 ' + G.turnSeat);
+    r = Game.pass(1);
+    ok(r.ok, '座位 1 过: ' + (r.error || ''));
+    // 2 出完 + 3/0/1 全过 → 一轮结束，应由首出者(2)的下一位未出完者(3)重新首出
+    ok(G.turnSeat === 3, '一轮结束后由 3 重新首出，实际 ' + G.turnSeat);
+    ok(G.lastPlay === null, '新一轮开始前 lastPlay 应清空');
+    ok(G.passCount === 0, '新一轮开始前 passCount 应清零');
+  }
+
+  section('— 下一局首出 —');
+  {
+    Game.startGame({
+      mode: 'local', difficulty: 'normal',
+      players: [{ name: 'A', isHuman: false }, { name: 'B', isHuman: false },
+        { name: 'C', isHuman: false }, { name: 'D', isHuman: false }],
+    });
+    const G = Game.G;
+    G.hooks.log = () => {};
+    G.hooks.state = () => {};
+    G.fastMode = true;
+    G.finished = [2, 0, 1, 3];   // 上一局座位 2 是头游
+    G.teamLevel = [3, 2];
+    G.playingTeam = 0;
+    Game.nextRound();
+    ok(G.turnSeat === 2, '下一局应由上局头游（座位 2）首出，实际 ' + G.turnSeat);
+    ok(G.phase === 'playing', '进入对局阶段');
+    ok(G.level === 3, '本局打 3（升级后的级数），实际 ' + G.level);
+    ok(G.players.every((p) => p.hand.length === 27), '重新发牌每人 27 张');
+  }
+
   section('— AI 决策 —');
   {
     const ctx = {

@@ -26,9 +26,9 @@ node server.js          # 联机服务器，默认端口 8700
 
 ```bash
 node tests/gd-core-test.js      # 牌型识别 / 逢人配 / 炸弹层级 / 比较（61 项）
-node tests/gd-engine-test.js    # 发牌 / 出牌校验 / 10 局全 AI 自动对局 / 升级结算（20 项）
-node tests/gd-net-test.js       # 联机服务器 E2E：建房/加入/开局/出牌/脱敏（18 项）
-npm i jsdom && node tests/gd-ui-test.js   # 页面 UI 与移动端适配（14 项）
+node tests/gd-engine-test.js    # 发牌 / 出牌校验 / 回合次序 / 10 局全 AI 自动对局 / 升级结算（35 项）
+node tests/gd-net-test.js       # 联机服务器 E2E：建房/开局/出牌/脱敏/房主移交/断线感知（20 项）
+npm i jsdom && node tests/gd-ui-test.js   # 页面 UI / 人机回合流转 / 移动端适配（17 项）
 ```
 
 ## 文件

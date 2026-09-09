@@ -129,6 +129,39 @@ function bootPage() {
     ok(top.querySelector('.name').textContent.length > 0, '应显示对手名字');
   });
 
+  console.log('— 人机回合流转（驱动死锁回归）—');
+  // 回归背景：onPlayClick 曾直接调引擎而不唤醒驱动循环，玩家首出后 AI 永不行动
+  try {
+    const Game = window.GuandanGame;
+    // 等待轮到玩家（开局玩家首出）
+    let guard = 0;
+    while (Game.G.turnSeat !== 0 && guard++ < 100) await sleep(50);
+    ok(Game.G.turnSeat === 0, '开局应轮到玩家首出');
+    const cards = $('handCards').querySelectorAll('.card');
+    ok(cards.length > 0, '手牌应已渲染');
+    // 点击第一张牌选中，然后点「出牌」
+    cards[0].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    ok($('btnPlay').disabled === false, '选牌后出牌按钮应可用');
+    $('btnPlay').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    await sleep(150); // 驱动循环在微任务中应用出牌
+    const afterMyPlay = Game.G.players[0].hand.length;
+    ok(afterMyPlay === 26, '玩家出牌后手牌应为 26 张，实际 ' + afterMyPlay);
+    // AI（550ms 决策延迟）应接管并行动；最终回合交还玩家或有人再出牌
+    guard = 0;
+    let progressed = false;
+    while (guard++ < 60) {
+      await sleep(100);
+      const aiMoved = Game.G.players.some((p) => !p.isHuman && p.hand.length < 27);
+      const backToMe = Game.G.turnSeat === 0 && Game.G.phase === 'playing';
+      if (aiMoved || backToMe) { progressed = true; break; }
+    }
+    ok(progressed, '玩家出牌后 AI 应有响应（死锁回归：驱动循环必须继续）');
+    ok(Game.G.players[0].hand.length >= 1, '对局仍在进行');
+    pass++; console.log('  ✓ 玩家出牌 → AI 应答 → 对局推进');
+  } catch (e) {
+    fail++; console.log('  ✗ 玩家出牌 → AI 应答 → 对局推进\n      ' + e.message);
+  }
+
   console.log('— 移动端适配 —');
   t('viewport 元信息含安全区适配', () => {
     const vp = doc.querySelector('meta[name="viewport"]');

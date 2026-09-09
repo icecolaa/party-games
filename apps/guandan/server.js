@@ -332,13 +332,18 @@ function startRoomGame(conn, isAgain) {
   const room = conn.room;
   if (!room || conn.seat !== room.hostSeat) return;
   if (room.started && room.G && room.G.phase === 'playing') return;
+  // 服务端校验：必须恰好 4 名玩家（真人 + AI 补位）
+  const total = room.seats.length + room.config.aiFill;
+  if (total !== 4) {
+    wsSendText(conn.socket, JSON.stringify({ t: 'err', msg: '需要 4 名玩家（真人 + AI 补位）才能开始' }));
+    return;
+  }
   ensureEngine(room);
   room.started = true;
   const humans = room.seats.map((s, i) => ({ name: s.name, avatar: s.avatar, isHuman: true, seat: i }));
-  const aiCount = room.config.aiFill;
   const players = humans.slice();
-  for (let i = 0; i < aiCount && players.length < 4; i++) {
-    players.push({ name: 'AI-' + (i + 1), avatar: '🤖', isHuman: false });
+  for (let i = players.length; i < 4; i++) {
+    players.push({ name: 'AI-' + i, avatar: '🤖', isHuman: false });
   }
   room.lastCfg = {
     mode: 'net', difficulty: room.config.difficulty, startLevel: room.config.startLevel,
@@ -357,11 +362,10 @@ function startNextRound(room) {
   driveGame(room);
 }
 
-/* 驱动对局：轮到真人时挂起等待其操作，其余由引擎内部 AI 处理 */
+/* 驱动对局：轮到真人时挂起等待其操作，其余由 AI 处理 */
 async function driveGame(room) {
   const G = room.G;
-  if (!G || G.running) { if (G) G.running = true; }
-  if (G._driving) return;
+  if (!G || G._driving) return;
   G._driving = true;
   try {
     while (room.G.phase === 'playing' && !room.G.over) {
@@ -446,9 +450,34 @@ function onConnClose(conn) {
   if (!seat || seat.ws !== conn.socket) return;
   seat.ws = null;
   if (!roomConns(room).length) { rooms.delete(room.code); return; }
+  if (!room.started) {
+    // 未开局：房主离开则移交房主给第一个在线者，并刷新大厅
+    if (conn.seat === room.hostSeat) {
+      const next = roomConns(room)[0];
+      if (next) room.hostSeat = next.seat;
+    }
+    broadcast(room, { t: 'log', msg: '⚠ ' + seat.name + ' 离开了房间', cls: 'alert' });
+    sendRoomInfo(room);
+    return;
+  }
   broadcast(room, { t: 'log', msg: '⚠ ' + seat.name + ' 断开连接，轮到时将自动代打', cls: 'alert' });
   broadcastState(room);
 }
+
+/* ================= 心跳探测 ================= */
+
+/* Windows/IOCP 下客户端 RST 不会立即唤醒服务端挂起的读，断连要等下一次写才暴露。
+ * 定期向所有连接发 WS ping：死连接在写上报错 → 触发 error/cleanup → 正常走断线流程。
+ * （ping 同时让 NAT/代理保持映射，测试可用 PING_INTERVAL_MS 缩短间隔） */
+const PING_INTERVAL = Number(process.env.PING_INTERVAL_MS) || 10000;
+const pingTimer = setInterval(() => {
+  for (const room of rooms.values()) {
+    for (const s of room.seats) {
+      if (s.ws) wsSendRaw(s.ws, 0x9, Buffer.alloc(0));
+    }
+  }
+}, PING_INTERVAL);
+pingTimer.unref();
 
 /* ================= 启动 ================= */
 

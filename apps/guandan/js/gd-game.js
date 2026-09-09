@@ -6,8 +6,8 @@
  * 级牌从 2 打到 A（14）：当前打 n 时，n 为级牌（牌力仅次王）
  * 升级规则：头游+对家二游 = 升 3 级；头游+对家三游 = 升 2 级；
  *           头游+对家末游 = 升 1 级（对家=队友）
- * 进贡：上一局末游向头游进贡最大牌，头游还贡一张 ≤10 的牌
- *       双下（对手包揽头二游）时两人各进贡
+ * 每局由上一局头游首出；下一局所打级数为头游队伍的新级数
+ * （简化版规则：暂不含进贡还贡）
  * ------------------------------------------------------------
  * 暴露 GuandanGame（浏览器 window / Node module）
  * ============================================================ */
@@ -30,13 +30,12 @@ const GuandanGame = (function () {
     lastPlay: null,         // { seat, play, cards }
     passCount: 0,
     finished: [],           // 本局出完牌的顺序（座位）
-    phase: 'idle',          // idle | tribute | playing | roundEnd | gameOver
+    phase: 'idle',          // idle | playing | roundEnd | gameOver
     handNo: 0,
     difficulty: 'normal',
     over: false,
     gameResult: null,
     winner: null,
-    tribute: null,          // { from:[seat], to:[seat], cards:[] }
     running: false,
     humanResolver: null,
     autoPlay: false,
@@ -80,7 +79,6 @@ const GuandanGame = (function () {
     G.finished = [];
     G.lastPlay = null;
     G.passCount = 0;
-    G.tribute = null;
     G.running = true;
     G.turnSeat = cfg.firstSeat || 0;
     createPlayers(cfg);
@@ -170,7 +168,7 @@ const GuandanGame = (function () {
       if (leader && !leader.finished) {
         G.turnSeat = leader.seat;       // 出牌者重新首出
       } else {
-        let s = (fromSeat + 1) % 4;     // 出牌者已走完：下一位未出完者首出
+        let s = (leader.seat + 1) % 4;  // 首出者已走完：按座次由其下家（未出完者）首出
         let guard = 0;
         while (G.players[s].finished && guard++ < 4) s = (s + 1) % 4;
         G.turnSeat = s;
@@ -234,18 +232,19 @@ const GuandanGame = (function () {
     stateChanged();
   }
 
-  /* 下一局：发牌并处理进贡还贡 */
+  /* 下一局：发牌，由上一局头游首出 */
   function nextRound() {
     if (G.over) return;
+    const firstSeat = G.finished.length ? G.finished[0] : 0; // 头游首出
     G.handNo++;
     G.finished = [];
     G.lastPlay = null;
     G.passCount = 0;
     G.phase = 'playing';
     G.level = G.teamLevel[G.playingTeam];
+    G.turnSeat = firstSeat;
     deal();
     stateChanged();
-    return G.tribute;
   }
 
   /* ---------------- 自动对局（AI 与真人混排） ---------------- */

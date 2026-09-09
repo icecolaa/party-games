@@ -11,7 +11,6 @@ const G = Game.G;
 const $ = (id) => document.getElementById(id);
 const UI = {
   selected: new Set(),   // 已选中的手牌 id
-  seatMap: [null, null, null, null], // 逻辑座位 → 显示位置（相对本人）
   net: { ws: null, connected: false, isNet: false, room: null, meIdx: 0, host: false },
   hintIndex: 0,
   hints: [],
@@ -90,22 +89,15 @@ function renderSeats() {
     const box = $('seat' + pos.charAt(0).toUpperCase() + pos.slice(1));
     if (!box) continue;
     const p = G.players[seat];
+    if (!p) continue; // 未开局时保留「等待」占位
     const info = box.querySelector('.seat-info');
-    if (!p) { box.classList.add('hidden'); continue; }
-    box.classList.remove('hidden');
     info.querySelector('.avatar').textContent = p.avatar || '🤖';
     info.querySelector('.name').textContent = p.name + (Game.teamOf(seat) === Game.teamOf(me) ? '（队友）' : '');
     info.querySelector('.count').textContent = p.hand ? p.hand.length : (p.count || 0);
     box.classList.toggle('active', G.turnSeat === seat && G.phase === 'playing');
     box.classList.toggle('finished', !!p.finished);
-    // 各家最近出的牌
-    const played = $('played' + pos.charAt(0).toUpperCase() + pos.slice(1));
-    played.innerHTML = '';
-    if (G.lastPlay && G.lastPlay.seat === seat && pos !== 'self') {
-      for (const c of G.lastPlay.cards) played.appendChild(cardEl(c, { small: true }));
-    }
   }
-  // 自己的出牌区
+  // 自己出的牌显示在手牌上方（他人的牌由 renderCenter 显示在牌桌中央）
   const selfPlayed = $('selfPlayed');
   selfPlayed.innerHTML = '';
   if (G.lastPlay && G.lastPlay.seat === me) {
@@ -171,8 +163,6 @@ function renderActions() {
 
 /* ---------------- 本地模式 ---------------- */
 
-let localRunning = false;
-
 function startLocalGame() {
   const name = ($('localName').value || '我').trim().slice(0, 10);
   const diff = document.querySelector('#diffSeg .seg-btn.active').dataset.d;
@@ -182,46 +172,54 @@ function startLocalGame() {
     { name: '小慧', avatar: '🤖', isHuman: false },
     { name: '小勇', avatar: '🤖', isHuman: false },
   ];
+  // 唤醒并作废上一局的驱动循环（其令牌已失效，恢复后即退出）
+  if (G.humanResolver) { const r = G.humanResolver; G.humanResolver = null; r.res(null); }
   $('setupOverlay').classList.add('hidden');
+  $('resultOverlay').classList.add('hidden');
   $('logList').innerHTML = '';
   UI.net.isNet = false;
   UI.selected.clear();
   Game.startGame({ mode: 'local', difficulty: diff, players, firstSeat: 0 });
   G.hooks.log = uiLog;
   G.hooks.state = () => render();
-  localRunning = true;
   uiLog('对局开始，你和「小慧」是队友（对家）', 'good');
   render();
   driveLocal();
 }
 
-async function driveLocal() {
-  if (G._driving) return;
-  G._driving = true;
-  try {
-    while (G.phase === 'playing' && !G.over) {
-      const seat = G.turnSeat;
-      const p = G.players[seat];
-      if (!p) { G.turnSeat = (seat + 1) % 4; continue; }
-      if (p.finished) { Game.advanceTurn(seat); continue; }
-      if (!p.hand.length) { p.finished = true; p.rank = G.finished.length + 1; G.finished.push(seat); Game.advanceTurn(seat); continue; }
+let driveToken = 0; // 每次驱动会话一个令牌：重开对局后旧驱动自动失效
 
-      if (p.isHuman) {
-        const action = await Game.waitHuman(seat);
-        if (G.phase !== 'playing' || G.over) break;
-        if (!action) continue;
-        if (action.type === 'play') { if (!Game.playCards(seat, action.cards).ok) continue; }
-        else if (action.type === 'pass') { if (!Game.pass(seat).ok) continue; }
-      } else {
-        await new Promise((r) => setTimeout(r, 550));
-        if (G.phase !== 'playing' || G.over) break;
-        const d = AI.decide(localAICtx(seat));
-        if (d && d.cards) { if (!Game.playCards(seat, d.cards.map((c) => c.id)).ok) forcePlay(seat); }
-        else if (!Game.pass(seat).ok) forcePlay(seat);
+async function driveLocal() {
+  const token = ++driveToken;
+  while (G.phase === 'playing' && !G.over && driveToken === token) {
+    const seat = G.turnSeat;
+    const p = G.players[seat];
+    if (!p) { G.turnSeat = (seat + 1) % 4; continue; }
+    if (p.finished) { Game.advanceTurn(seat); continue; }
+    if (!p.hand.length) { p.finished = true; p.rank = G.finished.length + 1; G.finished.push(seat); Game.advanceTurn(seat); continue; }
+
+    if (p.isHuman) {
+      const action = await Game.waitHuman(seat);
+      if (driveToken !== token) break; // 对局已被重开，本轮驱动作废
+      if (G.phase !== 'playing' || G.over) break;
+      if (!action) continue;
+      if (action.type === 'play') {
+        const r = Game.playCards(seat, action.cards);
+        if (!r.ok) { toast(playErrText(r.error)); continue; }
+      } else if (action.type === 'pass') {
+        const r = Game.pass(seat);
+        if (!r.ok) { toast(playErrText(r.error)); continue; }
       }
+    } else {
+      await new Promise((r) => setTimeout(r, 550));
+      if (driveToken !== token) break;
+      if (G.phase !== 'playing' || G.over) break;
+      const d = AI.decide(localAICtx(seat));
+      if (d && d.cards) { if (!Game.playCards(seat, d.cards.map((c) => c.id)).ok) forcePlay(seat); }
+      else if (!Game.pass(seat).ok) forcePlay(seat);
     }
-    onRoundEnd();
-  } finally { G._driving = false; }
+  }
+  if (driveToken === token) onRoundEnd();
 }
 
 function forcePlay(seat) {
@@ -245,28 +243,21 @@ function localAICtx(seat) {
 /* ---------------- 玩家操作 ---------------- */
 
 function onPlayClick() {
-  const me = UI.net.isNet ? UI.net.meIdx : 0;
   const ids = Array.from(UI.selected);
   if (!ids.length) return;
   if (UI.net.isNet) {
     netSend({ t: 'play', cards: ids });
-    UI.selected.clear();
-    renderHand(); renderActions();
   } else {
-    const r = Game.playCards(me, ids);
-    if (!r.ok) toast(playErrText(r.error));
-    else { UI.selected.clear(); renderHand(); renderActions(); }
+    // 交给驱动循环执行（含校验与失败重试）；非法出牌由循环留在原玩家重试
+    Game.resolveHuman({ type: 'play', cards: ids });
   }
+  UI.selected.clear();
+  renderHand(); renderActions();
 }
 
 function onPassClick() {
-  const me = UI.net.isNet ? UI.net.meIdx : 0;
-  if (UI.net.isNet) {
-    netSend({ t: 'pass' });
-  } else {
-    const r = Game.pass(me);
-    if (!r.ok) toast(playErrText(r.error));
-  }
+  if (!UI.net.isNet) Game.resolveHuman({ type: 'pass' });
+  else netSend({ t: 'pass' });
   UI.selected.clear();
   renderHand(); renderActions();
 }
@@ -435,6 +426,7 @@ function applyNetState(msg) {
   G.over = g.over; G.winner = g.winner; G.gameResult = g.gameResult;
   G.difficulty = g.difficulty;
   UI.selected.clear();
+  if (g.phase === 'playing') $('resultOverlay').classList.add('hidden'); // 下一局开始时收起结算浮层
   render();
 }
 

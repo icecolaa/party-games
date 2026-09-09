@@ -7,6 +7,7 @@
 const http = require('http');
 const crypto = require('crypto');
 const path = require('path');
+process.env.PING_INTERVAL_MS = '200'; // 缩短心跳，断连感知 <1s（须在 require 之前设置）
 const { server } = require(path.join(__dirname, '..', 'server.js'));
 
 const PORT = 8701;
@@ -159,7 +160,29 @@ function waitFor(client, pred, timeout) {
     assert(false, '未能等到乙的回合');
   }
 
-  console.log('[5] 断线回收');
+  console.log('[5] 房主移交与人数校验');
+  // 新房间：房主断开后，剩余玩家应成为新房主
+  const H1 = await wsConnect(PORT);
+  H1.send({ t: 'create', name: '房主' });
+  const h1Room = await waitFor(H1, (m) => m.t === 'room');
+  const H2 = await wsConnect(PORT);
+  H2.send({ t: 'join', code: h1Room.room.code, name: '接任' });
+  await waitFor(H2, (m) => m.t === 'room');
+  // 先注册监听再断开，避免消息早于监听到达
+  const hostTransfer = waitFor(H2, (m) => m.t === 'room' && m.host === true, 5000).catch(() => null);
+  H1.close();
+  const h2Host = await hostTransfer;
+  assert(h2Host !== null, '房主断开后剩余玩家应成为新房主');
+  // 人数校验：1 人 + AI 补位 0 时开局应被拒
+  H2.send({ t: 'config', aiFill: 0 });
+  await sleep(200);
+  H2.send({ t: 'start' });
+  const startErr = await waitFor(H2, (m) => m.t === 'err', 4000).catch(() => null);
+  assert(startErr !== null, '不满 4 人开局应收到错误');
+  H2.close();
+  await sleep(300);
+
+  console.log('[6] 断线回收');
   A.close(); B.close();
   await sleep(500);
   // 房间应仍在（有 AI 补位连接？无 → 全部断开则回收）；重建连接验证服务器未崩溃

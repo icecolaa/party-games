@@ -59,11 +59,6 @@ const GuandanAI = (function () {
     return moves + left;
   }
 
-  /* 是否可以一手出完 */
-  function winningPlays(hand, prevPlay, level) {
-    return C.legalPlays(hand, prevPlay, level).filter((p) => p.cards.length === hand.length);
-  }
-
   /* 队友是否已经出了牌（当前轮次领先者是队友） */
   function isTeammate(seat, mySeat) {
     return (seat % 2) === (mySeat % 2);
@@ -164,22 +159,7 @@ const GuandanAI = (function () {
     return null;
   }
 
-  /* 进贡：交出除红桃级牌（万能）外最大的牌 */
-  function tributeCard(hand, level) {
-    const cands = hand.filter((c) => !C.isWild(c, level));
-    if (!cands.length) return hand[0];
-    return cands.slice().sort((a, b) => C.cardPower(b.rank, level) - C.cardPower(a.rank, level))[0];
-  }
-
-  /* 还贡：交出最小的、不超过 10 的牌（规则：还贡牌不大于 10） */
-  function returnCard(hand, level) {
-    const small = hand.filter((c) => !C.isWild(c, level) && C.cardPower(c.rank, level) <= 10);
-    const pool = small.length ? small : hand.filter((c) => !C.isWild(c, level));
-    const use = pool.length ? pool : hand;
-    return use.slice().sort((a, b) => C.cardPower(a.rank, level) - C.cardPower(b.rank, level))[0];
-  }
-
-  return { decide, tributeCard, returnCard, DIFF, winningPlays, isTeammate };
+  return { decide };
 })();
 
 if (typeof module !== 'undefined' && module.exports) module.exports = GuandanAI;

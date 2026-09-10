@@ -39,11 +39,33 @@ input { width:100%; padding:11px 12px; border-radius:9px; background:var(--panel
 .st-row .stars { color:var(--accent); font-size:12px; }
 #toast { position:fixed; left:50%; bottom:12%; transform:translateX(-50%); background:rgba(0,0,0,.88); padding:10px 18px; border-radius:10px; font-size:13.5px; opacity:0; transition:.2s; pointer-events:none; z-index:9; }
 #toast.show { opacity:1; }
+/* ---- 图文规则弹窗（统一风格） ---- */
+.rules-ov{position:fixed;inset:0;z-index:90;background:rgba(6,10,18,.88);display:flex;align-items:center;justify-content:center;padding:18px}
+.rules-ov.hidden{display:none}
+.rules-p{background:var(--panel,#1a2233);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:16px;padding:16px 16px 14px;width:100%;max-width:430px;max-height:calc(100dvh - 40px);overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.rules-p h2{font-size:17px;text-align:center;letter-spacing:1px;margin:0 0 2px}
+.rules-sub{color:var(--dim,#93a0b8);font-size:12px;text-align:center;margin-bottom:10px}
+.r-sec{margin-bottom:11px}
+.r-sec h3{font-size:13px;color:var(--accent,#f0b429);margin:0 0 5px}
+.r-art{background:rgba(0,0,0,.25);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:10px;padding:9px;margin-bottom:5px;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;font-size:19px;line-height:1.35}
+.r-sec p{font-size:12.5px;line-height:1.7;margin:0}
+.r-sec p b{color:var(--accent,#f0b429)}
+.r-lad{display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;font-size:12.5px;font-weight:700}
+.r-lad .lv{background:rgba(255,255,255,.1);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:6px;padding:2px 7px}
+.r-chip{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border:2px solid}
+.r-chip.r{color:#b02a1e;background:linear-gradient(160deg,#fff,#f0d9b5);border-color:#b02a1e}
+.r-chip.b{color:#1a3a6b;background:linear-gradient(160deg,#fff,#d5e2f0);border-color:#1a3a6b}
+.r-card{display:inline-flex;flex-direction:column;align-items:center;min-width:24px;padding:2px 5px;border-radius:4px;background:#fdfdfd;color:#1a1a1a;font-size:12px;font-weight:800;line-height:1.15;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.r-card.red{color:#d02b2b}
+.r-tile{display:inline-flex;flex-direction:column;align-items:center;min-width:22px;padding:2px 4px;border-radius:4px;background:linear-gradient(160deg,#fdfdfd,#e6e0d0);font-size:12px;font-weight:800;line-height:1.1;color:#1a1a1a;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.r-arrow{color:var(--dim,#93a0b8);font-size:14px}
+.rules-close{width:100%;padding:11px;border-radius:10px;background:linear-gradient(180deg,#f5c453,#e0a418);color:#23180a;font-weight:700;border:none;font-size:14px;cursor:pointer;margin-top:2px}
+.rq{width:30px;height:30px;border-radius:50%;background:var(--panel2,#232d42);border:1px solid var(--line,rgba(255,255,255,.1));color:var(--accent,#f0b429);font-weight:800;font-size:15px;cursor:pointer;flex:0 0 auto}
 </style>
 </head>
 <body>
 <div id="app">
-  <header><h1>🎲 摇色子</h1><p class="sub">热座轮流摇，点数大者赢星 · 对子翻倍</p></header>
+  <button class="rq" id="rulesOpen" title="玩法说明" style="position:absolute;right:12px;top:14px;">?</button><header><h1>🎲 摇色子</h1><p class="sub">热座轮流摇，点数大者赢星 · 对子翻倍</p></header>
 
   <!-- 设置 -->
   <div class="panel" id="setup">
@@ -238,5 +260,36 @@ input { width:100%; padding:11px 12px; border-radius:9px; background:var(--panel
   buildNameFields();
 })();
 </script>
+
+<!-- 图文规则弹窗 -->
+<div class="rules-ov hidden" id="rulesOv">
+  <div class="rules-p">
+
+<h2>🎲 摇色子玩法</h2>
+<div class="rules-sub">热座轮流摇 · 同一台设备传递即可</div>
+<div class="r-sec"><h3>🎯 比大小</h3>
+ <div class="r-art"><span class="r-card">4</span><span class="r-card">4</span><span class="r-arrow">→ 对子！(4+4)×2 = 16 分</span></div>
+ <div class="r-art"><span class="r-card">6</span><span class="r-card">2</span><span class="r-arrow">→ 普通 = 8 分</span></div>
+ <p>每轮每人摇一次（两颗骰），点数计入总分；摇出<b>对子</b>分数翻倍。设定轮数摇完，<b>累计分最高</b>者获胜。</p>
+</div>
+<div class="r-sec"><h3>🎲 自由摇</h3>
+ <p>不想比赛？选「自由摇」，1~6 颗骰子想摇就摇，聚会助兴随用随取。</p>
+</div>
+
+    <button class="rules-close" id="rulesOvClose">知道了，开玩！</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var ov = document.getElementById('rulesOv');
+  if (!ov) return;
+  var btn = document.getElementById('rulesOpen') || document.getElementById('rulesBtn');
+  if (btn) btn.addEventListener('click', function () { ov.classList.remove('hidden'); });
+  document.getElementById('rulesOvClose').addEventListener('click', function () { ov.classList.add('hidden'); });
+  ov.addEventListener('click', function (e) { if (e.target === ov) ov.classList.add('hidden'); });
+})();
+</script>
+
 </body>
 </html>

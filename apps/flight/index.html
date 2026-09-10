@@ -40,11 +40,33 @@ input { width:100%; padding:10px 12px; border-radius:9px; background:var(--panel
 .ghost { background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:10px; padding:10px; font-size:13px; width:100%; }
 #resultBody { text-align:center; font-size:15px; line-height:2; }
 #resultBody .win { color:var(--accent); font-weight:800; font-size:18px; }
+/* ---- 图文规则弹窗（统一风格） ---- */
+.rules-ov{position:fixed;inset:0;z-index:90;background:rgba(6,10,18,.88);display:flex;align-items:center;justify-content:center;padding:18px}
+.rules-ov.hidden{display:none}
+.rules-p{background:var(--panel,#1a2233);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:16px;padding:16px 16px 14px;width:100%;max-width:430px;max-height:calc(100dvh - 40px);overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.rules-p h2{font-size:17px;text-align:center;letter-spacing:1px;margin:0 0 2px}
+.rules-sub{color:var(--dim,#93a0b8);font-size:12px;text-align:center;margin-bottom:10px}
+.r-sec{margin-bottom:11px}
+.r-sec h3{font-size:13px;color:var(--accent,#f0b429);margin:0 0 5px}
+.r-art{background:rgba(0,0,0,.25);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:10px;padding:9px;margin-bottom:5px;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;font-size:19px;line-height:1.35}
+.r-sec p{font-size:12.5px;line-height:1.7;margin:0}
+.r-sec p b{color:var(--accent,#f0b429)}
+.r-lad{display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;font-size:12.5px;font-weight:700}
+.r-lad .lv{background:rgba(255,255,255,.1);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:6px;padding:2px 7px}
+.r-chip{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border:2px solid}
+.r-chip.r{color:#b02a1e;background:linear-gradient(160deg,#fff,#f0d9b5);border-color:#b02a1e}
+.r-chip.b{color:#1a3a6b;background:linear-gradient(160deg,#fff,#d5e2f0);border-color:#1a3a6b}
+.r-card{display:inline-flex;flex-direction:column;align-items:center;min-width:24px;padding:2px 5px;border-radius:4px;background:#fdfdfd;color:#1a1a1a;font-size:12px;font-weight:800;line-height:1.15;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.r-card.red{color:#d02b2b}
+.r-tile{display:inline-flex;flex-direction:column;align-items:center;min-width:22px;padding:2px 4px;border-radius:4px;background:linear-gradient(160deg,#fdfdfd,#e6e0d0);font-size:12px;font-weight:800;line-height:1.1;color:#1a1a1a;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.r-arrow{color:var(--dim,#93a0b8);font-size:14px}
+.rules-close{width:100%;padding:11px;border-radius:10px;background:linear-gradient(180deg,#f5c453,#e0a418);color:#23180a;font-weight:700;border:none;font-size:14px;cursor:pointer;margin-top:2px}
+.rq{width:30px;height:30px;border-radius:50%;background:var(--panel2,#232d42);border:1px solid var(--line,rgba(255,255,255,.1));color:var(--accent,#f0b429);font-weight:800;font-size:15px;cursor:pointer;flex:0 0 auto}
 </style>
 </head>
 <body>
 <div id="app">
-  <header><h1>✈️ 飞行棋</h1><span class="turn" id="turnLabel"></span></header>
+  <header><h1>✈️ 飞行棋</h1><button class="rq" id="rulesOpen" title="玩法说明">?</button><span class="turn" id="turnLabel"></span></header>
   <div id="boardWrap"><canvas id="board" width="640" height="640"></canvas></div>
   <div class="bar">
     <div id="dice">?</div>
@@ -313,5 +335,36 @@ input { width:100%; padding:10px 12px; border-radius:9px; background:var(--panel
   draw();
 })();
 </script>
+
+<!-- 图文规则弹窗 -->
+<div class="rules-ov hidden" id="rulesOv">
+  <div class="rules-p">
+
+<h2>✈️ 飞行棋玩法</h2>
+<div class="rules-sub">四色棋盘 · 每方 4 架飞机 · 1 打 3 AI</div>
+<div class="r-sec"><h3>🎲 起飞</h3>
+ <div class="r-art"><span>🎲 掷出 6</span><span class="r-arrow">→</span><span>✈️ 起飞上环道</span><span class="r-arrow">·</span><span style="font-size:12px">掷 6 可再掷一次</span></div>
+</div>
+<div class="r-sec"><h3>🌀 前进</h3>
+ <div class="r-art"><span style="color:#e05252">●</span><span class="r-arrow">落在自家颜色格 → 向前跳 4 格</span></div>
+ <div class="r-art"><span style="color:#e05252">●</span><span class="r-arrow">💥 踩中敌机 → 送它回机场</span></div>
+ <p>进终点道要<b>恰好点数</b>，超出会<b>回弹</b>。4 架飞机全部到达中心即获胜。可动的飞机会<b>发光</b>，点击它移动。</p>
+</div>
+
+    <button class="rules-close" id="rulesOvClose">知道了，开玩！</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var ov = document.getElementById('rulesOv');
+  if (!ov) return;
+  var btn = document.getElementById('rulesOpen') || document.getElementById('rulesBtn');
+  if (btn) btn.addEventListener('click', function () { ov.classList.remove('hidden'); });
+  document.getElementById('rulesOvClose').addEventListener('click', function () { ov.classList.add('hidden'); });
+  ov.addEventListener('click', function (e) { if (e.target === ov) ov.classList.add('hidden'); });
+})();
+</script>
+
 </body>
 </html>

@@ -148,6 +148,28 @@
     .confirm-bar button { padding: 10px 20px; font-size: 15px; }
     footer { font-size: 11px; margin-top: 14px; }
   }
+/* ---- 图文规则弹窗（统一风格） ---- */
+.rules-ov{position:fixed;inset:0;z-index:90;background:rgba(6,10,18,.88);display:flex;align-items:center;justify-content:center;padding:18px}
+.rules-ov.hidden{display:none}
+.rules-p{background:var(--panel,#1a2233);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:16px;padding:16px 16px 14px;width:100%;max-width:430px;max-height:calc(100dvh - 40px);overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.rules-p h2{font-size:17px;text-align:center;letter-spacing:1px;margin:0 0 2px}
+.rules-sub{color:var(--dim,#93a0b8);font-size:12px;text-align:center;margin-bottom:10px}
+.r-sec{margin-bottom:11px}
+.r-sec h3{font-size:13px;color:var(--accent,#f0b429);margin:0 0 5px}
+.r-art{background:rgba(0,0,0,.25);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:10px;padding:9px;margin-bottom:5px;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;font-size:19px;line-height:1.35}
+.r-sec p{font-size:12.5px;line-height:1.7;margin:0}
+.r-sec p b{color:var(--accent,#f0b429)}
+.r-lad{display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;font-size:12.5px;font-weight:700}
+.r-lad .lv{background:rgba(255,255,255,.1);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:6px;padding:2px 7px}
+.r-chip{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border:2px solid}
+.r-chip.r{color:#b02a1e;background:linear-gradient(160deg,#fff,#f0d9b5);border-color:#b02a1e}
+.r-chip.b{color:#1a3a6b;background:linear-gradient(160deg,#fff,#d5e2f0);border-color:#1a3a6b}
+.r-card{display:inline-flex;flex-direction:column;align-items:center;min-width:24px;padding:2px 5px;border-radius:4px;background:#fdfdfd;color:#1a1a1a;font-size:12px;font-weight:800;line-height:1.15;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.r-card.red{color:#d02b2b}
+.r-tile{display:inline-flex;flex-direction:column;align-items:center;min-width:22px;padding:2px 4px;border-radius:4px;background:linear-gradient(160deg,#fdfdfd,#e6e0d0);font-size:12px;font-weight:800;line-height:1.1;color:#1a1a1a;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.r-arrow{color:var(--dim,#93a0b8);font-size:14px}
+.rules-close{width:100%;padding:11px;border-radius:10px;background:linear-gradient(180deg,#f5c453,#e0a418);color:#23180a;font-weight:700;border:none;font-size:14px;cursor:pointer;margin-top:2px}
+.rq{width:30px;height:30px;border-radius:50%;background:var(--panel2,#232d42);border:1px solid var(--line,rgba(255,255,255,.1));color:var(--accent,#f0b429);font-weight:800;font-size:15px;cursor:pointer;flex:0 0 auto}
 </style>
 </head>
 <body>
@@ -197,7 +219,7 @@
         </details>
       </div>
       <div class="card">
-        <div class="seg-label">游戏模式</div>
+        <button id="rulesOpen" class="mini-ghost" style="display:block;width:100%;margin-bottom:10px;">📖 玩法说明</button><div class="seg-label">游戏模式</div>
         <div class="seg" id="seg-mode">
           <button data-mode="ai" class="seg-btn active">人机对战</button>
           <button data-mode="online" class="seg-btn">联机对战</button>
@@ -1062,5 +1084,38 @@
   window.__gomoku = { S: S, doMove: doMove, newGame: newGame, undo: undo };
 })();
 </script>
+
+<!-- 图文规则弹窗 -->
+<div class="rules-ov hidden" id="rulesOv">
+  <div class="rules-p">
+
+<h2>⚫ 五子棋玩法</h2>
+<div class="rules-sub">15×15 棋盘 · 黑先白后 · 无禁手</div>
+<div class="r-sec"><h3>🎯 怎么赢</h3>
+ <div class="r-art"><span style="font-size:22px">⚫</span><span style="font-size:22px">⚫</span><span style="font-size:22px">⚫</span><span style="font-size:22px">⚫</span><span style="font-size:22px;filter:drop-shadow(0 0 4px #f0b429)">⚫</span></div>
+ <p>双方轮流在交叉点落子，横、竖、斜<b>任意方向先连成五子</b>即胜；棋盘下满判平局。</p>
+</div>
+<div class="r-sec"><h3>🎮 模式</h3>
+ <p><b>人机对战</b>：入门 / 进阶 / 大师三档棋力随时切换，可选先手方。<b>联机对战</b>：创建房间得 4 位房码，把链接发给好友即开战。</p>
+</div>
+<div class="r-sec"><h3>🎓 教练</h3>
+ <p>开启后实时提醒<b>对方的成五点</b>、点评好棋，输棋自动复盘找败因——新手强烈建议开着。</p>
+</div>
+
+    <button class="rules-close" id="rulesOvClose">知道了，开玩！</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var ov = document.getElementById('rulesOv');
+  if (!ov) return;
+  var btn = document.getElementById('rulesOpen') || document.getElementById('rulesBtn');
+  if (btn) btn.addEventListener('click', function () { ov.classList.remove('hidden'); });
+  document.getElementById('rulesOvClose').addEventListener('click', function () { ov.classList.add('hidden'); });
+  ov.addEventListener('click', function (e) { if (e.target === ov) ov.classList.add('hidden'); });
+})();
+</script>
+
 </body>
 </html>

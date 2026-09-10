@@ -46,6 +46,28 @@ input { width:100%; padding:11px 12px; border-radius:9px; background:var(--panel
 .primary { background:linear-gradient(180deg,#f5c453,#e0a418); color:#23180a; font-weight:700; padding:12px; border:none; border-radius:10px; font-size:15px; width:100%; cursor:pointer; }
 #resultBody { text-align:center; font-size:14px; line-height:2; }
 #log { font-size:11.5px; color:var(--dim); line-height:1.6; max-height:74px; overflow-y:auto; background:rgba(0,0,0,.18); border-radius:8px; padding:6px 10px; }
+/* ---- 图文规则弹窗（统一风格） ---- */
+.rules-ov{position:fixed;inset:0;z-index:90;background:rgba(6,10,18,.88);display:flex;align-items:center;justify-content:center;padding:18px}
+.rules-ov.hidden{display:none}
+.rules-p{background:var(--panel,#1a2233);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:16px;padding:16px 16px 14px;width:100%;max-width:430px;max-height:calc(100dvh - 40px);overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.rules-p h2{font-size:17px;text-align:center;letter-spacing:1px;margin:0 0 2px}
+.rules-sub{color:var(--dim,#93a0b8);font-size:12px;text-align:center;margin-bottom:10px}
+.r-sec{margin-bottom:11px}
+.r-sec h3{font-size:13px;color:var(--accent,#f0b429);margin:0 0 5px}
+.r-art{background:rgba(0,0,0,.25);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:10px;padding:9px;margin-bottom:5px;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;font-size:19px;line-height:1.35}
+.r-sec p{font-size:12.5px;line-height:1.7;margin:0}
+.r-sec p b{color:var(--accent,#f0b429)}
+.r-lad{display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;font-size:12.5px;font-weight:700}
+.r-lad .lv{background:rgba(255,255,255,.1);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:6px;padding:2px 7px}
+.r-chip{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border:2px solid}
+.r-chip.r{color:#b02a1e;background:linear-gradient(160deg,#fff,#f0d9b5);border-color:#b02a1e}
+.r-chip.b{color:#1a3a6b;background:linear-gradient(160deg,#fff,#d5e2f0);border-color:#1a3a6b}
+.r-card{display:inline-flex;flex-direction:column;align-items:center;min-width:24px;padding:2px 5px;border-radius:4px;background:#fdfdfd;color:#1a1a1a;font-size:12px;font-weight:800;line-height:1.15;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.r-card.red{color:#d02b2b}
+.r-tile{display:inline-flex;flex-direction:column;align-items:center;min-width:22px;padding:2px 4px;border-radius:4px;background:linear-gradient(160deg,#fdfdfd,#e6e0d0);font-size:12px;font-weight:800;line-height:1.1;color:#1a1a1a;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.r-arrow{color:var(--dim,#93a0b8);font-size:14px}
+.rules-close{width:100%;padding:11px;border-radius:10px;background:linear-gradient(180deg,#f5c453,#e0a418);color:#23180a;font-weight:700;border:none;font-size:14px;cursor:pointer;margin-top:2px}
+.rq{width:30px;height:30px;border-radius:50%;background:var(--panel2,#232d42);border:1px solid var(--line,rgba(255,255,255,.1));color:var(--accent,#f0b429);font-weight:800;font-size:15px;cursor:pointer;flex:0 0 auto}
 </style>
 </head>
 <body>
@@ -283,16 +305,50 @@ input { width:100%; padding:11px 12px; border-radius:9px; background:var(--panel
     if (!r.ok) toast('出牌失败');
   });
   $('startBtn').addEventListener('click', startLocal);
+  $('startBtn').addEventListener('click', startLocal);
+  $('startBtn').addEventListener('click', startLocal);
   $('nextBtn').addEventListener('click', function () {
     // 单局结束后继续下一局（由 runFullGame 循环控制，正常时不会手动触发）
     $('result').classList.add('hidden');
   });
-  $('rulesBtn').addEventListener('click', function () {
-    alert('青花麻将（精简规则）\n\n· 仅万 / 筒 / 条 108 张，无风牌花牌\n· 轮流摸牌打牌，可碰 / 杠 / 胡（无吃）\n· 胡牌 = 4 面子 + 1 对，或七对\n· 番数：自摸+1 门清+1 七对+3 碰碰胡+2 清一色+4\n· 点炮者付全部番分，自摸三家各付\n· 4 局轮庄，累计积分');
-  });
+  $('rulesBtn').addEventListener('click', function () { document.getElementById('rulesOv').classList.remove('hidden'); });
 
   $('setup').classList.remove('hidden');
 })();
 </script>
+
+<!-- 图文规则弹窗 -->
+<div class="rules-ov hidden" id="rulesOv">
+  <div class="rules-p">
+
+<h2>🀄 青花麻将玩法</h2>
+<div class="rules-sub">仅万 / 筒 / 条 108 张 · 无风牌花牌 · 可碰杠胡（无吃）</div>
+<div class="r-sec"><h3>🎯 怎么胡</h3>
+ <div class="r-art"><span class="r-tile ">1<i style="font-style:normal;font-size:10px;opacity:.75">万</i></span><span class="r-tile ">2<i style="font-style:normal;font-size:10px;opacity:.75">万</i></span><span class="r-tile ">3<i style="font-style:normal;font-size:10px;opacity:.75">万</i></span><span class="r-arrow">+</span><span class="r-tile red">5<i style="font-style:normal;font-size:10px;opacity:.75">筒</i></span><span class="r-tile red">5<i style="font-style:normal;font-size:10px;opacity:.75">筒</i></span><span class="r-tile red">5<i style="font-style:normal;font-size:10px;opacity:.75">筒</i></span><span class="r-arrow">+</span><span class="r-tile ">7<i style="font-style:normal;font-size:10px;opacity:.75">条</i></span><span class="r-tile ">7<i style="font-style:normal;font-size:10px;opacity:.75">条</i></span></div>
+ <p>每局 13 张手牌，摸一张打一张。凑成 <b>4 副面子 + 1 对将</b> 即胡，或凑 <b>七对</b>。</p>
+</div>
+<div class="r-sec"><h3>🤝 碰与杠</h3>
+ <p>别人打出<b>你手里有一对</b>的牌可 <b>碰</b>；手里有暗刻可 <b>杠</b>（补摸一张）。碰杠亮牌后就没有「门清」加番了。</p>
+</div>
+<div class="r-sec"><h3>✨ 番种</h3>
+ <div class="r-lad"><span class="lv">基本 1 番</span><span class="lv">自摸 +1</span><span class="lv">门清 +1</span><span class="lv">七对 +3</span><span class="lv">碰碰胡 +2</span><span class="lv">清一色 +4</span></div>
+ <p>点炮者付全部番分，自摸三家各付。牌墙摸尽流局。共 4 局轮庄，累计积分定胜负。</p>
+</div>
+
+    <button class="rules-close" id="rulesOvClose">知道了，开玩！</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var ov = document.getElementById('rulesOv');
+  if (!ov) return;
+  var btn = document.getElementById('rulesOpen') || document.getElementById('rulesBtn');
+  if (btn) btn.addEventListener('click', function () { ov.classList.remove('hidden'); });
+  document.getElementById('rulesOvClose').addEventListener('click', function () { ov.classList.add('hidden'); });
+  ov.addEventListener('click', function (e) { if (e.target === ov) ov.classList.add('hidden'); });
+})();
+</script>
+
 </body>
 </html>

@@ -217,6 +217,22 @@
 <!-- 牌型说明 -->
 <div id="rulesOverlay" class="overlay hidden">
   <div class="panel">
+    
+    <style>
+    .r-art{background:rgba(0,0,0,.25);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:10px;padding:9px;margin:6px 0;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+    .r-card{display:inline-flex;flex-direction:column;align-items:center;min-width:24px;padding:2px 5px;border-radius:4px;background:#fdfdfd;color:#1a1a1a;font-size:12px;font-weight:800;line-height:1.15;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+    .r-card.red{color:#d02b2b}
+    .r-arrow{color:#93a0b8;font-size:13px}
+    .r-flow{display:flex;flex-wrap:wrap;gap:5px;align-items:center;justify-content:center;font-size:12.5px;font-weight:700}
+    .r-flow .st{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:2px 8px}
+    </style>
+    <div class="r-art"><b style="align-self:center;margin-right:2px">底牌</b>
+      <span class="r-card red">A♠</span><span class="r-card">K♥</span>
+      <b style="align-self:center;margin:0 2px">公共牌</b>
+      <span class="r-card">2♣</span><span class="r-card red">7♦</span><span class="r-card">9♠</span><span class="r-card red">J♠</span><span class="r-card">Q♠</span>
+    </div>
+    <div class="r-flow"><span class="st">翻牌前</span><span class="r-arrow">→</span><span class="st">翻牌</span><span class="r-arrow">→</span><span class="st">转牌</span><span class="r-arrow">→</span><span class="st">河牌</span><span class="r-arrow">→</span><span class="st">摊牌</span></div>
+    
     <h2>牌型大小（从大到小）</h2>
     <ol class="rank-list">
       <li><b>皇家同花顺</b> — 同花色 A K Q J 10</li>

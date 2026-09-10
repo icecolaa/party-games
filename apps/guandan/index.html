@@ -169,5 +169,69 @@
 <script src="js/gd-ai.js"></script>
 <script src="js/gd-game.js"></script>
 <script src="js/gd-ui.js"></script>
+
+<!-- 图文规则弹窗 -->
+<style>/* ---- 图文规则弹窗（统一风格） ---- */
+.rules-ov{position:fixed;inset:0;z-index:90;background:rgba(6,10,18,.88);display:flex;align-items:center;justify-content:center;padding:18px}
+.rules-ov.hidden{display:none}
+.rules-p{background:var(--panel,#1a2233);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:16px;padding:16px 16px 14px;width:100%;max-width:430px;max-height:calc(100dvh - 40px);overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.rules-p h2{font-size:17px;text-align:center;letter-spacing:1px;margin:0 0 2px}
+.rules-sub{color:var(--dim,#93a0b8);font-size:12px;text-align:center;margin-bottom:10px}
+.r-sec{margin-bottom:11px}
+.r-sec h3{font-size:13px;color:var(--accent,#f0b429);margin:0 0 5px}
+.r-art{background:rgba(0,0,0,.25);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:10px;padding:9px;margin-bottom:5px;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;font-size:19px;line-height:1.35}
+.r-sec p{font-size:12.5px;line-height:1.7;margin:0}
+.r-sec p b{color:var(--accent,#f0b429)}
+.r-lad{display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;font-size:12.5px;font-weight:700}
+.r-lad .lv{background:rgba(255,255,255,.1);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:6px;padding:2px 7px}
+.r-chip{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border:2px solid}
+.r-chip.r{color:#b02a1e;background:linear-gradient(160deg,#fff,#f0d9b5);border-color:#b02a1e}
+.r-chip.b{color:#1a3a6b;background:linear-gradient(160deg,#fff,#d5e2f0);border-color:#1a3a6b}
+.r-card{display:inline-flex;flex-direction:column;align-items:center;min-width:24px;padding:2px 5px;border-radius:4px;background:#fdfdfd;color:#1a1a1a;font-size:12px;font-weight:800;line-height:1.15;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.r-card.red{color:#d02b2b}
+.r-tile{display:inline-flex;flex-direction:column;align-items:center;min-width:22px;padding:2px 4px;border-radius:4px;background:linear-gradient(160deg,#fdfdfd,#e6e0d0);font-size:12px;font-weight:800;line-height:1.1;color:#1a1a1a;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.r-arrow{color:var(--dim,#93a0b8);font-size:14px}
+.rules-close{width:100%;padding:11px;border-radius:10px;background:linear-gradient(180deg,#f5c453,#e0a418);color:#23180a;font-weight:700;border:none;font-size:14px;cursor:pointer;margin-top:2px}
+.rq{width:30px;height:30px;border-radius:50%;background:var(--panel2,#232d42);border:1px solid var(--line,rgba(255,255,255,.1));color:var(--accent,#f0b429);font-weight:800;font-size:15px;cursor:pointer;flex:0 0 auto}
+</style>
+<div class="rules-ov hidden" id="rulesOv">
+  <div class="rules-p">
+
+<h2>🃏 掼蛋玩法</h2>
+<div class="rules-sub">4 人两队 · 对家即队友 · 两副牌共 108 张</div>
+<div class="r-sec"><h3>🎯 怎么赢</h3>
+ <div class="r-art"><span>😌 你</span><span class="r-arrow">⇅ 队友</span><span>😄 对家</span><span class="r-arrow">⇅</span><span>敌 😠 ×2</span></div>
+ <p>座位 0&2、1&3 各为一队，<b>对家就是队友</b>。先出完手牌的队伍按名次<b>升级</b>，率先打过 <b>A</b> 的队伍获胜。</p>
+</div>
+<div class="r-sec"><h3>🂡 牌型大小</h3>
+ <div class="r-art"><span class="r-card red">4</span><span class="r-card">4</span><span class="r-arrow">&lt;</span><span class="r-card">4</span><span class="r-card">4</span><span class="r-card">4</span><span class="r-card">4</span><span class="r-arrow">&lt;</span><span class="r-card red">7</span><span class="r-card red">7</span><span class="r-card red">7</span><span class="r-card red">7</span><span class="r-card red">7</span><span class="r-card red">7</span><span class="r-arrow">·</span><span class="r-tile ">10<i style="font-style:normal;font-size:10px;opacity:.75">♠</i></span><span class="r-tile ">J<i style="font-style:normal;font-size:10px;opacity:.75">♠</i></span><span class="r-arrow">… 同花连牌</span></div>
+ <p>单张 · 对子 · 三张 · <b>三带二</b> · <b>顺子</b>(≥5) · <b>三连对</b> · <b>钢板</b> · <b>炸弹</b> · <b>同花顺</b> · <b>天王炸</b>。同型同长比点数，级牌大于 A。</p>
+</div>
+<div class="r-sec"><h3>💥 炸弹层级</h3>
+ <div class="r-lad"><span class="lv">4炸</span>&lt;<span class="lv">5炸</span>&lt;<span class="lv">同花顺</span>&lt;<span class="lv">6炸</span>&lt;<span class="lv">7炸</span>&lt;<span class="lv">8炸+</span>&lt;<span class="lv">👑天王炸</span></div>
+ <p>炸弹可压一切普通牌型，每出一个本局<b>倍数 ×2</b>。</p>
+</div>
+<div class="r-sec"><h3>♥ 逢人配</h3>
+ <p>当前级数的<b>红桃</b>是万能牌，可代替除大小王外的任意牌——例如打 5 时 ♥5 可当 10，凑成 6-10 顺子。</p>
+</div>
+<div class="r-sec"><h3>⬆️ 升级</h3>
+ <p>头游 + 队友<b>二游</b> 升 3 级 · 队友<b>三游</b> 升 2 级 · 队友<b>末游</b> 升 1 级。下一局由头游首出。</p>
+</div>
+
+    <button class="rules-close" id="rulesOvClose">知道了，开玩！</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var ov = document.getElementById('rulesOv');
+  if (!ov) return;
+  var btn = document.getElementById('rulesOpen') || document.getElementById('rulesBtn');
+  if (btn) btn.addEventListener('click', function () { ov.classList.remove('hidden'); });
+  document.getElementById('rulesOvClose').addEventListener('click', function () { ov.classList.add('hidden'); });
+  ov.addEventListener('click', function (e) { if (e.target === ov) ov.classList.add('hidden'); });
+})();
+</script>
+
 </body>
 </html>

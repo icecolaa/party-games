@@ -66,6 +66,28 @@ input { width:100%; padding:11px 12px; border-radius:9px; background:var(--panel
 #resultBody { text-align:center; font-size:14px; line-height:2; }
 #resultBody .win { color:var(--win); font-weight:800; } #resultBody .lose { color:var(--lose); font-weight:800; }
 @media (max-width: 480px) { :root { --card-w:46px; --card-h:66px; } #hand .card { margin-left:-28px; } .card .r { font-size:13px; } .card .s { font-size:12px; top:17px; } .card::after { font-size:15px; } .seat .tag .n { max-width:50px; } .seat .played { max-width:120px; } }
+/* ---- 图文规则弹窗（统一风格） ---- */
+.rules-ov{position:fixed;inset:0;z-index:90;background:rgba(6,10,18,.88);display:flex;align-items:center;justify-content:center;padding:18px}
+.rules-ov.hidden{display:none}
+.rules-p{background:var(--panel,#1a2233);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:16px;padding:16px 16px 14px;width:100%;max-width:430px;max-height:calc(100dvh - 40px);overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.rules-p h2{font-size:17px;text-align:center;letter-spacing:1px;margin:0 0 2px}
+.rules-sub{color:var(--dim,#93a0b8);font-size:12px;text-align:center;margin-bottom:10px}
+.r-sec{margin-bottom:11px}
+.r-sec h3{font-size:13px;color:var(--accent,#f0b429);margin:0 0 5px}
+.r-art{background:rgba(0,0,0,.25);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:10px;padding:9px;margin-bottom:5px;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;font-size:19px;line-height:1.35}
+.r-sec p{font-size:12.5px;line-height:1.7;margin:0}
+.r-sec p b{color:var(--accent,#f0b429)}
+.r-lad{display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;font-size:12.5px;font-weight:700}
+.r-lad .lv{background:rgba(255,255,255,.1);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:6px;padding:2px 7px}
+.r-chip{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border:2px solid}
+.r-chip.r{color:#b02a1e;background:linear-gradient(160deg,#fff,#f0d9b5);border-color:#b02a1e}
+.r-chip.b{color:#1a3a6b;background:linear-gradient(160deg,#fff,#d5e2f0);border-color:#1a3a6b}
+.r-card{display:inline-flex;flex-direction:column;align-items:center;min-width:24px;padding:2px 5px;border-radius:4px;background:#fdfdfd;color:#1a1a1a;font-size:12px;font-weight:800;line-height:1.15;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.r-card.red{color:#d02b2b}
+.r-tile{display:inline-flex;flex-direction:column;align-items:center;min-width:22px;padding:2px 4px;border-radius:4px;background:linear-gradient(160deg,#fdfdfd,#e6e0d0);font-size:12px;font-weight:800;line-height:1.1;color:#1a1a1a;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.r-arrow{color:var(--dim,#93a0b8);font-size:14px}
+.rules-close{width:100%;padding:11px;border-radius:10px;background:linear-gradient(180deg,#f5c453,#e0a418);color:#23180a;font-weight:700;border:none;font-size:14px;cursor:pointer;margin-top:2px}
+.rq{width:30px;height:30px;border-radius:50%;background:var(--panel2,#232d42);border:1px solid var(--line,rgba(255,255,255,.1));color:var(--accent,#f0b429);font-weight:800;font-size:15px;cursor:pointer;flex:0 0 auto}
 </style>
 </head>
 <body>
@@ -328,12 +350,45 @@ input { width:100%; padding:11px 12px; border-radius:9px; background:var(--panel
   $('restartBtn').addEventListener('click', function () {
     if (confirm('重新开始？')) startLocal();
   });
-  $('rulesBtn').addEventListener('click', function () {
-    alert('斗地主玩法\n\n· 54 张牌（含双王），每人 17 张，3 张底牌归地主\n· 轮流叫 1/2/3 分，最高分为地主并拿底牌，地主先出\n· 牌型：单张/对子/三张/三带一/三带二/顺子(≥5)/连对(≥3对)/飞机/四带二/炸弹/王炸\n· 炸弹与王炸翻倍；先出完手牌的阵营获胜\n· 地主以一敌二，农民互相配合');
-  });
+  $('rulesBtn').addEventListener('click', function () { document.getElementById('rulesOv').classList.remove('hidden'); });
 
   $('setup').classList.remove('hidden');
 })();
 </script>
+
+<!-- 图文规则弹窗 -->
+<div class="rules-ov hidden" id="rulesOv">
+  <div class="rules-p">
+
+<h2>🎴 斗地主玩法</h2>
+<div class="rules-sub">54 张牌（含双王）· 每人 17 张 · 3 张底牌归地主</div>
+<div class="r-sec"><h3>🎯 怎么玩</h3>
+ <div class="r-art"><span>🙂 你</span><span class="r-arrow">VS</span><span>🤖 AI 甲</span><span class="r-arrow">+</span><span>🤖 AI 乙</span></div>
+ <p>轮流叫 <b>1 / 2 / 3 分</b>，最高分者当<b>地主</b>并拿 3 张底牌、地主先出。地主以一敌二，<b>先出完手牌</b>的一方获胜。</p>
+</div>
+<div class="r-sec"><h3>🂡 牌型</h3>
+ <div class="r-art"><span class="r-card">3</span><span class="r-card">4</span><span class="r-card">5</span><span class="r-card red">6</span><span class="r-card">7</span> <span class="r-arrow">顺子</span> <span class="r-card">3</span><span class="r-card">3</span><span class="r-card">4</span><span class="r-card">4</span><span class="r-card">5</span><span class="r-card">5</span> <span class="r-arrow">连对</span> <span class="r-card red">K</span><span class="r-card">K</span><span class="r-card">K</span><span class="r-card red">9</span> <span class="r-arrow">三带一</span></div>
+ <div class="r-art"><span class="r-card">5</span><span class="r-card">5</span><span class="r-card">5</span><span class="r-card">6</span><span class="r-card">6</span><span class="r-card">6</span><span class="r-card">3</span><span class="r-card">4</span> <span class="r-arrow">飞机带翅</span> 🃏🃏 <span class="r-arrow">王炸最大</span></div>
+ <p>单张 · 对子 · 三张 · 三带一/二 · <b>顺子</b>(≥5) · <b>连对</b>(≥3对) · <b>飞机</b> · <b>四带二</b> · <b>炸弹</b> · <b>王炸</b>。2 和王不能进顺子。</p>
+</div>
+<div class="r-sec"><h3>💥 炸弹与倍数</h3>
+ <p>炸弹 / 王炸可压一切牌型，每出一个<b>倍数 ×2</b>；得分 = 底分 × 倍数，地主翻倍。</p>
+</div>
+
+    <button class="rules-close" id="rulesOvClose">知道了，开玩！</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var ov = document.getElementById('rulesOv');
+  if (!ov) return;
+  var btn = document.getElementById('rulesOpen') || document.getElementById('rulesBtn');
+  if (btn) btn.addEventListener('click', function () { ov.classList.remove('hidden'); });
+  document.getElementById('rulesOvClose').addEventListener('click', function () { ov.classList.add('hidden'); });
+  ov.addEventListener('click', function (e) { if (e.target === ov) ov.classList.add('hidden'); });
+})();
+</script>
+
 </body>
 </html>

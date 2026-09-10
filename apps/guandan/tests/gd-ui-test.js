@@ -162,6 +162,30 @@ function bootPage() {
     fail++; console.log('  ✗ 玩家出牌 → AI 应答 → 对局推进\n      ' + e.message);
   }
 
+  console.log('— 提示缓存失效（验收发现的真实 Bug 回归）—');
+  try {
+    const Game = window.GuandanGame;
+    // 场景：点过提示后重开一局，第一次提示不得使用上一局的过期缓存
+    let guard = 0;
+    while (Game.G.turnSeat !== 0 && guard++ < 100) await sleep(50);
+    $('handCards').querySelectorAll('.card.sel').forEach((c) => c.dispatchEvent(new window.MouseEvent('click', { bubbles: true })));
+    $('btnHint').dispatchEvent(new window.MouseEvent('click', { bubbles: true })); // 旧局面提示
+    $('newGameBtn').dispatchEvent(new window.MouseEvent('click', { bubbles: true })); // confirm 桩=true 重开
+    await sleep(150);
+    guard = 0;
+    while (Game.G.turnSeat !== 0 && guard++ < 100) await sleep(50);
+    $('handCards').querySelectorAll('.card.sel').forEach((c) => c.dispatchEvent(new window.MouseEvent('click', { bubbles: true })));
+    $('btnHint').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    const sel = $('handCards').querySelectorAll('.card.sel');
+    ok(sel.length > 0, '重开后首次提示应选中本手牌中的牌（过期缓存回归）');
+    const selIds = Array.from(sel).map((c) => c.dataset.id);
+    const handIds = new Set(Game.G.players[0].hand.map((c) => String(c.id)));
+    ok(selIds.every((id) => handIds.has(id)), '选中的牌必须都在当前手牌里');
+    pass++; console.log('  ✓ 重开后提示基于新手牌（无过期缓存）');
+  } catch (e) {
+    fail++; console.log('  ✗ 重开后提示基于新手牌\n      ' + e.message);
+  }
+
   console.log('— 移动端适配 —');
   t('viewport 元信息含安全区适配', () => {
     const vp = doc.querySelector('meta[name="viewport"]');

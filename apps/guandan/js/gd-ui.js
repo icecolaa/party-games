@@ -14,6 +14,7 @@ const UI = {
   net: { ws: null, connected: false, isNet: false, room: null, meIdx: 0, host: false },
   hintIndex: 0,
   hints: [],
+  hintCtx: '',           // 提示缓存对应的局面指纹（局面变化即失效）
 };
 
 /* ---------------- 通用 ---------------- */
@@ -179,6 +180,7 @@ function startLocalGame() {
   $('logList').innerHTML = '';
   UI.net.isNet = false;
   UI.selected.clear();
+  UI.hints = []; UI.hintIndex = 0; UI.hintCtx = '';
   Game.startGame({ mode: 'local', difficulty: diff, players, firstSeat: 0 });
   G.hooks.log = uiLog;
   G.hooks.state = () => render();
@@ -275,6 +277,10 @@ function onHintClick() {
   const me = UI.net.isNet ? UI.net.meIdx : 0;
   const p = G.players[me];
   if (!p || !p.hand) return;
+  // 局面变化（任何人出过牌 / 新一局）后提示缓存即失效，须重算
+  const ctxKey = (G.lastPlay ? G.lastPlay.seat + ':' + G.lastPlay.play.type + ':' + G.lastPlay.play.rank : 'lead') +
+    '|' + p.hand.length + '|' + G.handNo;
+  if (UI.hintCtx !== ctxKey) { UI.hints = []; UI.hintIndex = 0; UI.hintCtx = ctxKey; }
   if (!UI.hints.length) {
     UI.hints = C.legalPlays(p.hand, G.lastPlay ? G.lastPlay.play : null, G.level);
     UI.hintIndex = 0;
@@ -337,6 +343,7 @@ function onResultNext() {
     G.hooks.state = () => render();
     Game.nextRound();
     UI.selected.clear();
+    UI.hints = []; UI.hintIndex = 0; UI.hintCtx = '';
     render();
     driveLocal();
   }
@@ -426,6 +433,7 @@ function applyNetState(msg) {
   G.over = g.over; G.winner = g.winner; G.gameResult = g.gameResult;
   G.difficulty = g.difficulty;
   UI.selected.clear();
+  UI.hints = []; UI.hintIndex = 0; UI.hintCtx = '';
   if (g.phase === 'playing') $('resultOverlay').classList.add('hidden'); // 下一局开始时收起结算浮层
   render();
 }

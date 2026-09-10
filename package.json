@@ -6,7 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node apps/wuziqi/test.js && node apps/wuziqi/test-mp.js && node apps/wuziqi/test-ui.js && node apps/dezhou-poker/tests/poker-test.js && node apps/dezhou-poker/tests/net-e2e.js && node apps/guandan/tests/gd-core-test.js && node apps/guandan/tests/gd-engine-test.js && node apps/guandan/tests/gd-net-test.js && node apps/guandan/tests/gd-ui-test.js && node tests/smoke.js"
+    "test": "node apps/wuziqi/test.js && node apps/wuziqi/test-mp.js && node apps/wuziqi/test-ui.js && node apps/dezhou-poker/tests/poker-test.js && node apps/dezhou-poker/tests/net-e2e.js && node apps/guandan/tests/gd-core-test.js && node apps/guandan/tests/gd-engine-test.js && node apps/guandan/tests/gd-net-test.js && node apps/guandan/tests/gd-ui-test.js && node apps/chess/tests/xq-core-test.js && node apps/doudizhu/tests/ddz-core-test.js && node apps/doudizhu/tests/ddz-engine-test.js && node apps/mahjong/tests/mj-core-test.js && node apps/mahjong/tests/mj-engine-test.js && node apps/flight/tests/flight-core-test.js && node apps/dice/tests/dice-core-test.js && node apps/rps/tests/rps-core-test.js && node tests/smoke.js"
   },
   "engines": {
     "node": ">=18"

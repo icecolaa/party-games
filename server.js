@@ -28,7 +28,13 @@ const guandan = require('./apps/guandan/server.js');
 const GAMES = [
   { id: 'gomoku', mount: '/gomoku', root: path.join(ROOT, 'apps', 'wuziqi'), api: gomoku.handleApi },
   { id: 'poker', mount: '/poker', root: path.join(ROOT, 'apps', 'dezhou-poker'), upgrade: poker.handleUpgrade },
-  { id: 'guandan', mount: '/guandan', root: path.join(ROOT, 'apps', 'guandan'), upgrade: guandan.handleUpgrade }
+  { id: 'guandan', mount: '/guandan', root: path.join(ROOT, 'apps', 'guandan'), upgrade: guandan.handleUpgrade },
+  { id: 'rps', mount: '/rps', root: path.join(ROOT, 'apps', 'rps') },
+  { id: 'dice', mount: '/dice', root: path.join(ROOT, 'apps', 'dice') },
+  { id: 'flight', mount: '/flight', root: path.join(ROOT, 'apps', 'flight') },
+  { id: 'doudizhu', mount: '/doudizhu', root: path.join(ROOT, 'apps', 'doudizhu') },
+  { id: 'mahjong', mount: '/mahjong', root: path.join(ROOT, 'apps', 'mahjong') },
+  { id: 'chess', mount: '/chess', root: path.join(ROOT, 'apps', 'chess') }
 ];
 
 const MIME = {

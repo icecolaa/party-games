@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>摇色子</title>
+<style>
+:root { --panel:#1a2233; --panel2:#232d42; --line:rgba(255,255,255,.1); --text:#e8ecf3; --dim:#93a0b8; --accent:#f0b429; --win:#5ad07f; }
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif; background:radial-gradient(900px 500px at 80% -10%, #3a2a10 0%, transparent 55%), linear-gradient(160deg,#141a28,#0d1220); color:var(--text); min-height:100dvh; display:flex; justify-content:center; padding:18px 14px; padding-top:calc(18px + env(safe-area-inset-top)); user-select:none; -webkit-user-select:none; }
+#app { width:100%; max-width:560px; display:flex; flex-direction:column; gap:14px; }
+header { text-align:center; } header h1 { font-size:22px; letter-spacing:2px; }
+header .sub { color:var(--dim); font-size:12.5px; margin-top:4px; }
+.panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px; display:flex; flex-direction:column; gap:12px; }
+.panel h2 { font-size:16px; text-align:center; }
+.seg { display:flex; gap:8px; flex-wrap:wrap; }
+.seg button { flex:1; min-width:64px; padding:11px 0; border-radius:10px; background:var(--panel2); border:1px solid var(--line); color:var(--dim); font-size:13.5px; cursor:pointer; }
+.seg button.active { border-color:var(--accent); color:var(--accent); background:rgba(240,180,41,.14); font-weight:700; }
+label { font-size:12.5px; color:var(--dim); display:block; margin-bottom:6px; }
+input { width:100%; padding:11px 12px; border-radius:9px; background:var(--panel2); border:1px solid var(--line); color:var(--text); font-size:15px; font-family:inherit; }
+.primary { background:linear-gradient(180deg,#f5c453,#e0a418); color:#23180a; font-weight:700; padding:12px; border:none; border-radius:10px; font-size:15px; cursor:pointer; width:100%; }
+.ghost { background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:10px; padding:10px; cursor:pointer; font-size:13px; width:100%; }
+.hidden { display:none !important; }
+.dice-row { display:flex; gap:14px; justify-content:center; margin:10px 0; }
+.die { width:72px; height:72px; border-radius:14px; background:linear-gradient(160deg,#fff,#e8e2d0); color:#222; font-size:40px; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 16px rgba(0,0,0,.45); }
+.die.rolling { animation:shake .45s ease infinite; }
+@keyframes shake { 0%,100%{transform:rotate(0) translateY(0)} 25%{transform:rotate(-14deg) translateY(-8px)} 75%{transform:rotate(14deg) translateY(-4px)} }
+.now { text-align:center; }
+.now .who { font-size:15px; font-weight:700; }
+.now .res { font-size:14px; color:var(--dim); min-height:20px; }
+.now .res .dbl { color:var(--accent); font-weight:700; }
+.big-btn { width:100%; padding:16px; font-size:18px; }
+.standings { display:flex; flex-direction:column; gap:6px; }
+.st-row { display:flex; align-items:center; gap:8px; background:var(--panel2); border-radius:9px; padding:8px 12px; font-size:13.5px; }
+.st-row .rk { color:var(--accent); font-weight:700; width:26px; }
+.st-row .nm { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.st-row .sc { font-weight:700; }
+.st-row.top { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
+.st-row .stars { color:var(--accent); font-size:12px; }
+#toast { position:fixed; left:50%; bottom:12%; transform:translateX(-50%); background:rgba(0,0,0,.88); padding:10px 18px; border-radius:10px; font-size:13.5px; opacity:0; transition:.2s; pointer-events:none; z-index:9; }
+#toast.show { opacity:1; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header><h1>🎲 摇色子</h1><p class="sub">热座轮流摇，点数大者赢星 · 对子翻倍</p></header>
+
+  <!-- 设置 -->
+  <div class="panel" id="setup">
+    <h2>比大小</h2>
+    <div><label>玩家人数（同一台设备轮流）</label>
+      <div class="seg" id="countSeg">
+        <button data-n="2">2 人</button><button data-n="3" class="active">3 人</button>
+        <button data-n="4">4 人</button><button data-n="5">5 人</button><button data-n="6">6 人</button>
+      </div>
+    </div>
+    <div><label>轮数</label>
+      <div class="seg" id="roundSeg">
+        <button data-r="1">1 轮</button><button data-r="2">2 轮</button>
+        <button data-r="3" class="active">3 轮</button><button data-r="5">5 轮</button>
+      </div>
+    </div>
+    <div id="nameFields"></div>
+    <button id="startBtn" class="primary">开始游戏</button>
+    <button id="freeBtn" class="ghost">🎲 自由摇（不做游戏，随手摇）</button>
+  </div>
+
+  <!-- 对局 -->
+  <div class="panel hidden" id="game">
+    <div class="now">
+      <div class="who" id="curName">—</div>
+      <div class="dice-row" id="diceRow"></div>
+      <div class="res" id="curRes"></div>
+    </div>
+    <button id="rollBtn" class="primary big-btn">🎲 摇！</button>
+    <div class="standings" id="standings"></div>
+    <button id="endBtn" class="ghost">结束游戏</button>
+  </div>
+
+  <!-- 自由摇 -->
+  <div class="panel hidden" id="free">
+    <h2>自由摇</h2>
+    <div><label>骰子数量</label>
+      <div class="seg" id="freeCount">
+        <button data-n="1" class="active">1</button><button data-n="2">2</button><button data-n="3">3</button>
+        <button data-n="4">4</button><button data-n="5">5</button><button data-n="6">6</button>
+      </div>
+    </div>
+    <div class="dice-row" id="freeDice"></div>
+    <div class="now"><div class="res" id="freeRes">点「摇」开始</div></div>
+    <button id="freeRoll" class="primary big-btn">🎲 摇！</button>
+    <button id="freeBack" class="ghost">返回</button>
+  </div>
+
+  <!-- 结算 -->
+  <div class="panel hidden" id="over">
+    <h2>🏁 终局排名</h2>
+    <div class="standings" id="finalList"></div>
+    <button id="againBtn" class="primary">再来一局</button>
+    <button id="homeBtn" class="ghost">返回设置</button>
+  </div>
+</div>
+<div id="toast"></div>
+<script src="js/dice-core.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = window.DiceCore;
+  var $ = function (id) { return document.getElementById(id); };
+  var S = { count: 3, rounds: 3, names: [], cur: 0, round: 0, totals: [], phase: '' };
+
+  function toast(m) { var t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, 1800); }
+  function defaultName(i) { return '玩家' + (i + 1); }
+
+  function buildNameFields() {
+    var html = '';
+    for (var i = 0; i < S.count; i++) {
+      html += '<div style="margin-bottom:8px"><label>玩家 ' + (i + 1) + ' 昵称</label>' +
+        '<input maxlength="10" data-i="' + i + '" value="' + defaultName(i) + '"></div>';
+    }
+    $('nameFields').innerHTML = html;
+  }
+  $('countSeg').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    document.querySelectorAll('#countSeg button').forEach(function (x) { x.classList.remove('active'); });
+    b.classList.add('active');
+    S.count = Number(b.dataset.n);
+    buildNameFields();
+  });
+  $('roundSeg').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    document.querySelectorAll('#roundSeg button').forEach(function (x) { x.classList.remove('active'); });
+    b.classList.add('active');
+    S.rounds = Number(b.dataset.r);
+  });
+
+  function show(id) { ['setup', 'game', 'free', 'over'].forEach(function (p) { $(p).classList.toggle('hidden', p !== id); }); }
+
+  function readNames() {
+    S.names = [];
+    var inputs = $('nameFields').querySelectorAll('input');
+    for (var i = 0; i < S.count; i++) {
+      S.names.push((inputs[i] ? inputs[i].value.trim().slice(0, 10) : '') || defaultName(i));
+    }
+  }
+  $('startBtn').addEventListener('click', function () {
+    readNames();
+    S.cur = 0; S.round = 0; S.totals = S.names.map(function () { return 0; });
+    $('setup').classList.add('hidden'); $('over').classList.add('hidden');
+    $('game').classList.remove('hidden');
+    renderGame();
+  });
+  $('endBtn').addEventListener('click', function () { finish(); });
+  $('againBtn').addEventListener('click', function () { show('setup'); });
+  $('homeBtn').addEventListener('click', function () { show('setup'); });
+
+  function dieEl(v, rolling) {
+    var d = document.createElement('div');
+    d.className = 'die' + (rolling ? ' rolling' : '');
+    d.textContent = v || '?';
+    return d;
+  }
+  function renderGame() {
+    $('curName').textContent = '第 ' + (S.round + 1) + ' / ' + S.rounds + ' 轮 · 轮到 ' + S.names[S.cur];
+    var row = $('diceRow'); row.innerHTML = '';
+    row.appendChild(dieEl(0, false)); row.appendChild(dieEl(0, false));
+    $('curRes').textContent = '点「摇」开始';
+    $('rollBtn').disabled = false;
+    renderStandings();
+  }
+  function renderStandings() {
+    var order = S.totals.map(function (t, i) { return { t: t, i: i }; }).sort(function (a, b) { return b.t - a.t; });
+    $('standings').innerHTML = order.map(function (e, i) {
+      return '<div class="st-row' + (i === 0 && e.t > 0 ? ' top' : '') + '">' +
+        '<span class="rk">' + (i + 1) + '</span><span class="nm">' + S.names[e.i] + '</span>' +
+        '<span class="sc">' + e.t + '</span></div>';
+    }).join('');
+  }
+  var lastRound = []; // 本轮各家得分（含加成）
+  $('rollBtn').addEventListener('click', function () {
+    var btn = this;
+    btn.disabled = true;
+    var row = $('diceRow');
+    row.innerHTML = '';
+    row.appendChild(dieEl(0, true)); row.appendChild(dieEl(0, true));
+    $('curRes').textContent = '摇摇摇…';
+    setTimeout(function () {
+      var d = C.roll(2);
+      var r = C.roundScore(d);
+      row.innerHTML = '';
+      row.appendChild(dieEl(d[0])); row.appendChild(dieEl(d[1]));
+      $('curRes').innerHTML = '点数 <b>' + r.sum + '</b>' + (r.isDouble ? ' · <span class="dbl">对子！×2 = ' + r.score + '</span>' : '');
+      if (r.isDouble) toast('对子！分数翻倍');
+      S.totals[S.cur] += r.score;
+      lastRound[S.cur] = r.score;
+      S.cur++;
+      if (S.cur >= S.count) {
+        S.cur = 0; S.round++;
+        var rk = C.rankRound(lastRound.map(function (s) { return { score: s || 0 }; }));
+        if (rk.top.length === 1) toast('本轮 ' + S.names[rk.top[0]] + ' 以 ' + rk.best + ' 分领先');
+        lastRound = [];
+        if (S.round >= S.rounds) { renderStandings(); setTimeout(finish, 900); return; }
+      }
+      renderGame();
+    }, 700);
+  });
+  function finish() {
+    $('game').classList.add('hidden');
+    var fs = C.finalStandings(S.totals);
+    $('finalList').innerHTML = fs.map(function (e) {
+      return '<div class="st-row' + (e.rank === 1 ? ' top' : '') + '">' +
+        '<span class="rk">' + (e.rank === 1 ? '🏆' : e.rank) + '</span>' +
+        '<span class="nm">' + S.names[e.idx] + '</span><span class="sc">' + e.total + ' 分</span></div>';
+    }).join('');
+    $('over').classList.remove('hidden');
+  }
+
+  /* 自由摇 */
+  var freeN = 1;
+  $('freeBtn').addEventListener('click', function () { show('free'); rollFree(); });
+  $('freeBack').addEventListener('click', function () { show('setup'); });
+  $('freeCount').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    document.querySelectorAll('#freeCount button').forEach(function (x) { x.classList.remove('active'); });
+    b.classList.add('active');
+    freeN = Number(b.dataset.n);
+    rollFree();
+  });
+  function rollFree() {
+    var row = $('freeDice');
+    row.innerHTML = '';
+    var d = C.roll(freeN);
+    d.forEach(function (v) { row.appendChild(dieEl(v, false)); });
+    $('freeRes').textContent = '合计 ' + C.sum(d) + ' 点' + (d.length === 2 && d[0] === d[1] ? ' · 对子！' : '');
+  }
+  $('freeRoll').addEventListener('click', rollFree);
+
+  buildNameFields();
+})();
+</script>
+</body>
+</html>

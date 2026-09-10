@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>中国象棋</title>
+<style>
+:root { --panel:#1a2233; --panel2:#232d42; --line:rgba(255,255,255,.1); --text:#e8ecf3; --dim:#93a0b8; --accent:#f0b429; --win:#5ad07f; --lose:#e05252; --wood:#e8c98f; --wood-dark:#b98d51; }
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif; background:linear-gradient(160deg,#141a28,#0d1220); color:var(--text); min-height:100dvh; display:flex; justify-content:center; padding:12px; padding-top:calc(12px + env(safe-area-inset-top)); user-select:none; -webkit-user-select:none; }
+#app { width:100%; max-width:560px; display:flex; flex-direction:column; gap:10px; }
+header { display:flex; align-items:center; gap:8px; }
+header h1 { font-size:18px; letter-spacing:2px; }
+header .status { margin-left:auto; font-size:13px; font-weight:700; }
+header .status.check { color:var(--lose); }
+.board-wrap { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:10px; }
+#board { position:relative; width:100%; aspect-ratio:9/10; background:linear-gradient(160deg, var(--wood), var(--wood-dark)); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.5); }
+.cell { position:absolute; width:calc(100%/9); height:calc(100%/10); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.cell .pt {
+  width:82%; height:82%; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:min(4.6vw, 26px); font-weight:800; line-height:1;
+  box-shadow:0 3px 6px rgba(0,0,0,.35), inset 0 -2px 3px rgba(0,0,0,.15);
+  border:2px solid;
+}
+.cell .pt.r { color:#b02a1e; background:linear-gradient(160deg,#fff,#f0d9b5); border-color:#b02a1e; }
+.cell .pt.b { color:#1a3a6b; background:linear-gradient(160deg,#fff,#d5e2f0); border-color:#1a3a6b; }
+.cell.sel .pt { box-shadow:0 0 0 3px var(--accent), 0 3px 6px rgba(0,0,0,.35); transform:scale(1.06); }
+.cell.last .pt { box-shadow:0 0 0 2px rgba(240,180,41,.65), 0 3px 6px rgba(0,0,0,.35); }
+.cell .dot { width:22%; height:22%; border-radius:50%; background:var(--accent); opacity:.85; box-shadow:0 0 0 3px rgba(240,180,41,.35); }
+.cell .ring { width:74%; height:74%; border-radius:50%; border:3px dashed var(--accent); opacity:.85; }
+.gridline { position:absolute; background:#7a5a30; }
+.bar { display:flex; gap:8px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px; }
+#msg { flex:1; font-size:13.5px; line-height:1.5; }
+button { font-family:inherit; cursor:pointer; }
+#undoBtn, #restartBtn { background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:10px; padding:9px 14px; font-size:13px; flex:0 0 auto; }
+.hidden { display:none !important; }
+.overlay { position:fixed; inset:0; z-index:50; background:rgba(6,10,18,.88); display:flex; align-items:center; justify-content:center; padding:18px; }
+.overlay.hidden { display:none; }
+.panel { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:22px; width:100%; max-width:380px; display:flex; flex-direction:column; gap:12px; }
+.panel h2 { font-size:18px; text-align:center; }
+.panel .sub { color:var(--dim); font-size:12.5px; text-align:center; line-height:1.7; }
+.seg { display:flex; gap:8px; }
+.seg button { flex:1; padding:11px 0; border-radius:10px; background:var(--panel2); border:1px solid var(--line); color:var(--dim); font-size:13.5px; cursor:pointer; }
+.seg button.active { border-color:var(--accent); color:var(--accent); background:rgba(240,180,41,.14); font-weight:700; }
+label { font-size:12.5px; color:var(--dim); display:block; margin-bottom:5px; }
+input { width:100%; padding:11px 12px; border-radius:9px; background:var(--panel2); border:1px solid var(--line); color:var(--text); font-size:15px; font-family:inherit; }
+.primary { background:linear-gradient(180deg,#f5c453,#e0a418); color:#23180a; font-weight:700; padding:12px; border:none; border-radius:10px; font-size:15px; width:100%; }
+#resultBody { text-align:center; font-size:15px; line-height:2; }
+#resultBody .win { color:var(--win); font-weight:800; } #resultBody .lose { color:var(--lose); font-weight:800; }
+#history { font-size:11.5px; color:var(--dim); max-height:64px; overflow-y:auto; line-height:1.7; background:rgba(0,0,0,.18); border-radius:8px; padding:6px 10px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>♟ 中国象棋</h1>
+    <div class="status" id="status">红方行棋</div>
+  </header>
+  <div class="board-wrap"><div id="board"></div></div>
+  <div class="bar">
+    <div id="msg">执红先行，点击棋子移动</div>
+    <button id="undoBtn">悔棋</button>
+    <button id="restartBtn">重开</button>
+  </div>
+  <div id="history"></div>
+</div>
+
+<div class="overlay hidden" id="setup">
+  <div class="panel">
+    <h2>♟ 中国象棋</h2>
+    <p class="sub">楚河汉界 · 马走日象走田 · 过河卒横行<br>白脸将不可同列 · 困毙亦判负</p>
+    <div><label>你的昵称</label><input id="myName" maxlength="10" value="你"></div>
+    <div><label>AI 棋力</label>
+      <div class="seg" id="diffSeg">
+        <button data-d="easy">入门</button>
+        <button data-d="normal" class="active">进阶</button>
+        <button data-d="hard">大师</button>
+      </div>
+    </div>
+    <button id="startBtn" class="primary">开始对局（你执红先行）</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="result">
+  <div class="panel">
+    <h2 id="resultTitle">对局结束</h2>
+    <div id="resultBody"></div>
+    <button id="againBtn" class="primary">再来一局</button>
+  </div>
+</div>
+
+<script src="js/xq-core.js?v=1.0.1"></script>
+<script src="js/xq-ai.js?v=1.0.1"></script>
+<script>
+(function () {
+  'use strict';
+  var C = window.XqCore, AI = window.XqAI;
+  var $ = function (id) { return document.getElementById(id); };
+  var S = { st: null, sel: -1, legal: [], lastTo: -1, busy: false, level: 'normal', thinking: false };
+
+  function buildBoard() {
+    var bd = $('board');
+    bd.innerHTML = '';
+    for (var i = 0; i < 90; i++) {
+      var cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.style.left = (i % 9) * (100 / 9) + '%';
+      cell.style.top = Math.floor(i / 9) * (100 / 10) + '%';
+      cell.dataset.idx = i;
+      cell.addEventListener('click', onCell);
+      bd.appendChild(cell);
+    }
+  }
+  function render() {
+    var st = S.st;
+    var cells = $('board').children;
+    var legalTargets = {};
+    if (S.sel >= 0) for (var m of S.legal) if (m[0] === S.sel) legalTargets[m[1]] = true;
+    var inCheck = !st.over && C.inCheck(st.board, st.turn);
+    for (var i = 0; i < 90; i++) {
+      var cell = cells[i];
+      cell.innerHTML = '';
+      cell.classList.toggle('sel', i === S.sel);
+      cell.classList.toggle('last', i === S.lastTo);
+      var p = st.board[i];
+      if (p) {
+        var pt = document.createElement('div');
+        pt.className = 'pt ' + (C.isRed(p) ? 'r' : 'b');
+        pt.textContent = C.PIECE_NAMES[p];
+        cell.appendChild(pt);
+      } else if (legalTargets[i]) {
+        var d = document.createElement('div');
+        d.className = C.isRed(st.board[S.sel]) || true ? 'ring' : 'dot';
+        cell.appendChild(d);
+      }
+    }
+    // 状态栏
+    var stEl = $('status');
+    if (st.over) {
+      stEl.textContent = '对局结束';
+      stEl.className = 'status';
+    } else {
+      var who = st.turn === 'r' ? '红方' : '黑方';
+      stEl.textContent = who + '行棋' + (inCheck ? ' · 将军！' : '');
+      stEl.className = 'status' + (inCheck ? ' check' : '');
+    }
+    // 历史
+    $('history').textContent = st.history.length
+      ? '手数 ' + st.history.length + ' · 最近：' + C.moveText(st, st.history[st.history.length - 1].from, st.history[st.history.length - 1].to)
+      : '';
+  }
+  function msg(m) { $('msg').textContent = m; }
+
+  function onCell(e) {
+    if (S.busy || S.st.over) return;
+    if (S.st.turn !== 'r') return; // 人执红
+    var i = Number(e.currentTarget.dataset.idx);
+    var st = S.st;
+    var p = st.board[i];
+    if (S.sel >= 0) {
+      var hit = S.legal.some(function (m) { return m[0] === S.sel && m[1] === i; });
+      if (hit) { doMove(S.sel, i); return; }
+    }
+    if (p && C.isRed(p)) {
+      S.sel = i;
+      S.legal = C.genLegal(st.board, 'r').filter(function (m) { return m[0] === i; });
+      if (!S.legal.length) msg('这枚棋子当前无路可走');
+      render();
+    } else {
+      S.sel = -1; S.legal = [];
+      render();
+    }
+  }
+  function doMove(f, t) {
+    var r = C.move(S.st, f, t);
+    if (!r.ok) { msg(moveErr(r.reason)); return; }
+    S.sel = -1; S.legal = []; S.lastTo = t;
+    render();
+    if (S.st.over) { showResult(); return; }
+    msg('AI 思考中…');
+    S.busy = true;
+    setTimeout(function () {
+      var mv = AI.pickBest(S.st, S.level);
+      S.busy = false;
+      if (!mv) { render(); return; }
+      var r2 = C.move(S.st, mv[0], mv[1]);
+      S.sel = -1; S.legal = []; S.lastTo = mv[1];
+      render();
+      if (S.st.over) { showResult(); return; }
+      if (C.inCheck(S.st.board, 'r')) msg('将军！该你了');
+      else msg('轮到你，点击棋子移动');
+    }, 120);
+  }
+  function moveErr(code) {
+    return ({ game_over: '对局已结束', empty: '这里没有棋子', not_your_piece: '不是你的棋子', illegal_move: '不合规的走法' })[code] || '走法不合法';
+  }
+  function showResult() {
+    var meWin = S.st.winner === 'r';
+    $('resultTitle').textContent = meWin ? '🎉 你赢了！' : '你输了';
+    $('resultBody').innerHTML =
+      '<div class="' + (meWin ? 'win' : 'lose') + '">' +
+      (S.st.reason === 'checkmate' ? '绝杀' : S.st.reason === 'stalemate' ? '困毙' : '胜负已分') + '</div>' +
+      '共 ' + S.st.history.length + ' 手';
+    $('result').classList.remove('hidden');
+  }
+
+  function start() {
+    S.st = C.newState();
+    S.sel = -1; S.legal = []; S.lastTo = -1; S.busy = false;
+    $('setup').classList.add('hidden');
+    $('result').classList.add('hidden');
+    render();
+    msg('执红先行，点击棋子移动');
+  }
+
+  document.querySelectorAll('#diffSeg button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('#diffSeg button').forEach(function (x) { x.classList.remove('active'); });
+      b.classList.add('active');
+      S.level = b.dataset.d;
+    });
+  });
+  $('startBtn').addEventListener('click', start);
+  $('againBtn').addEventListener('click', function () {
+    $('result').classList.add('hidden');
+    $('setup').classList.remove('hidden');
+  });
+  $('restartBtn').addEventListener('click', function () { if (confirm('重新开始？')) start(); });
+  $('undoBtn').addEventListener('click', function () {
+    var st = S.st;
+    if (st.over || !st.history.length || S.busy) { if (!st.history.length) return; }
+    // 撤两手（AI + 自己）
+    for (var k = 0; k < 2 && st.history.length; k++) {
+      var h = st.history.pop();
+      st.board[h.from] = h.piece;
+      st.board[h.to] = h.captured;
+      st.turn = C.colorOf(h.piece);
+      st.over = false; st.winner = null; st.reason = '';
+    }
+    S.sel = -1; S.legal = []; S.lastTo = -1;
+    render();
+    msg('已悔棋');
+  });
+
+  buildBoard();
+  S.st = C.newState();
+  render();
+  $('setup').classList.remove('hidden');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>飞行棋</title>
+<style>
+:root { --panel:#1a2233; --panel2:#232d42; --line:rgba(255,255,255,.1); --text:#e8ecf3; --dim:#93a0b8; --accent:#f0b429; }
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif; background:linear-gradient(160deg,#141a28,#0d1220); color:var(--text); min-height:100dvh; display:flex; justify-content:center; padding:14px; padding-top:calc(14px + env(safe-area-inset-top)); user-select:none; -webkit-user-select:none; }
+#app { width:100%; max-width:640px; display:flex; flex-direction:column; gap:12px; }
+header { display:flex; align-items:center; gap:10px; }
+header h1 { font-size:19px; letter-spacing:2px; }
+header .turn { margin-left:auto; font-size:13px; color:var(--accent); font-weight:700; }
+#boardWrap { position:relative; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:8px; }
+canvas { display:block; width:100%; height:auto; border-radius:8px; touch-action:manipulation; }
+.bar { display:flex; align-items:center; gap:12px; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px; }
+#dice { width:64px; height:64px; border-radius:12px; background:linear-gradient(160deg,#fff,#e8e2d0); color:#222; font-size:34px; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 16px rgba(0,0,0,.45); flex:0 0 auto; }
+#dice.rolling { animation:shake .5s ease infinite; }
+@keyframes shake { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-16deg) translateY(-6px)} 75%{transform:rotate(16deg) translateY(-3px)} }
+#msg { flex:1; font-size:14px; line-height:1.5; }
+button { font-family:inherit; cursor:pointer; }
+#rollBtn { background:linear-gradient(180deg,#f5c453,#e0a418); color:#23180a; font-weight:800; border:none; border-radius:12px; padding:14px 22px; font-size:16px; flex:0 0 auto; }
+#rollBtn:disabled { opacity:.4; }
+.planes { display:flex; gap:8px; flex-wrap:wrap; }
+.pc { display:flex; align-items:center; gap:6px; background:var(--panel2); border-radius:9px; padding:6px 10px; font-size:12.5px; }
+.pc .dot { width:12px; height:12px; border-radius:50%; }
+.hidden { display:none !important; }
+.overlay { position:fixed; inset:0; z-index:50; background:rgba(6,10,18,.85); display:flex; align-items:center; justify-content:center; padding:18px; }
+.overlay.hidden { display:none; }
+.panel { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:20px; width:100%; max-width:380px; display:flex; flex-direction:column; gap:12px; }
+.panel h2 { font-size:17px; text-align:center; }
+.panel .sub { color:var(--dim); font-size:12.5px; text-align:center; line-height:1.6; }
+.seg { display:flex; gap:8px; flex-wrap:wrap; }
+.seg button { flex:1; min-width:70px; padding:10px 0; border-radius:10px; background:var(--panel2); border:1px solid var(--line); color:var(--dim); font-size:13px; }
+.seg button.active { border-color:var(--accent); color:var(--accent); background:rgba(240,180,41,.14); font-weight:700; }
+label { font-size:12.5px; color:var(--dim); display:block; margin-bottom:5px; }
+input { width:100%; padding:10px 12px; border-radius:9px; background:var(--panel2); border:1px solid var(--line); color:var(--text); font-size:15px; font-family:inherit; }
+.primary { background:linear-gradient(180deg,#f5c453,#e0a418); color:#23180a; font-weight:700; padding:12px; border:none; border-radius:10px; font-size:15px; width:100%; }
+.ghost { background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:10px; padding:10px; font-size:13px; width:100%; }
+#resultBody { text-align:center; font-size:15px; line-height:2; }
+#resultBody .win { color:var(--accent); font-weight:800; font-size:18px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header><h1>✈️ 飞行棋</h1><span class="turn" id="turnLabel"></span></header>
+  <div id="boardWrap"><canvas id="board" width="640" height="640"></canvas></div>
+  <div class="bar">
+    <div id="dice">?</div>
+    <div id="msg">点击「掷骰子」开始，掷到 6 起飞</div>
+    <button id="rollBtn">掷骰子</button>
+  </div>
+  <div class="planes" id="planeCounts"></div>
+</div>
+
+<div class="overlay hidden" id="setup">
+  <div class="panel">
+    <h2>✈️ 飞行棋</h2>
+    <p class="sub">掷到 6 起飞 · 落自家颜色跳 4 格 · 踩中敌机送回机场<br>终点需恰好点数，超出回弹 · 4 架全到获胜</p>
+    <div><label>你的昵称</label><input id="myName" maxlength="10" value="你"></div>
+    <button id="startBtn" class="primary">开始游戏</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="result">
+  <div class="panel">
+    <div id="resultBody"></div>
+    <button id="againBtn" class="primary">再来一局</button>
+  </div>
+</div>
+
+<script src="js/flight-core.js"></script>
+<script src="js/flight-ai.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = window.FlightCore, AI = window.FlightAI;
+  var $ = function (id) { return document.getElementById(id); };
+  var cv = $('board'), ctx = cv.getContext('2d');
+  var S = {
+    state: null, humans: [0],
+    turn: 0, d: null, over: false,
+    busy: false, awaitRoll: false
+  };
+  var CELL = 640 / 15;
+
+  function toast(m) { $('msg').textContent = m; }
+
+  /* ---------- 绘制 ---------- */
+  function draw() {
+    ctx.clearRect(0, 0, 640, 640);
+    ctx.fillStyle = '#182034';
+    ctx.fillRect(0, 0, 640, 640);
+    for (var c = 0; c < 4; c++) {
+      var b = C.HANGAR[c];
+      ctx.fillStyle = C.COLORS[c].hex + '33';
+      ctx.strokeStyle = C.COLORS[c].hex;
+      ctx.lineWidth = 2;
+      roundRect(b[1] * CELL - 4, b[0] * CELL - 4, CELL * 4 + 8, CELL * 4 + 8, 10);
+    }
+    for (var i = 0; i < 52; i++) {
+      var rc = C.LOOP[i], col = C.cellColor(i);
+      drawCell(rc[1], rc[0], C.COLORS[col].hex + '66', C.COLORS[col].hex);
+      if (i === C.START_IDX[col]) drawStart(rc[1], rc[0], C.COLORS[col].hex);
+    }
+    for (var p = 0; p < 4; p++) {
+      for (var k = 0; k < 6; k++) {
+        var h = C.HOME[p][k];
+        drawCell(h[1], h[0], C.COLORS[p].hex + '55', C.COLORS[p].hex);
+      }
+    }
+    ctx.save();
+    ctx.translate(C.CENTER[1] * CELL + CELL / 2, C.CENTER[0] * CELL + CELL / 2);
+    for (var t = 0; t < 4; t++) {
+      ctx.beginPath(); ctx.moveTo(0, 0);
+      var a = (t * 90 - 45) * Math.PI / 180, a2 = (t * 90 + 45) * Math.PI / 180;
+      ctx.arc(0, 0, CELL * 2.4, a, a2);
+      ctx.fillStyle = C.COLORS[t].hex + (t === S.turn && !S.over ? 'ff' : '88');
+      ctx.fill();
+    }
+    ctx.fillStyle = '#0d1220'; ctx.beginPath(); ctx.arc(0, 0, CELL * 0.8, 0, 7); ctx.fill();
+    ctx.restore();
+    var seen = {};
+    for (var pc = 0; pc < 4; pc++) {
+      for (var pi = 0; pi < 4; pi++) {
+        var pos = S.state.players[pc].planes[pi];
+        var x, y, movable = isMovable(pc, pi);
+        if (pos === -1) {
+          var hc = C.hangarCell(pc, pi);
+          x = hc[1] * CELL + CELL; y = hc[0] * CELL + CELL;
+        } else {
+          var co = C.coordOf(pc, pos);
+          x = co.rc[1] * CELL + CELL / 2; y = co.rc[0] * CELL + CELL / 2;
+          if (pos < 51) {
+            var key = 'L' + co.abs;
+            var n = seen[key] || 0; seen[key] = n + 1;
+            x += (n % 3) * 6 - 6; y += Math.floor(n / 3) * 6 - 3;
+          }
+        }
+        drawPlane(x, y, pc, pi, movable);
+      }
+    }
+  }
+  function drawCell(cx, cy, fill, stroke) {
+    ctx.fillStyle = fill; ctx.strokeStyle = stroke; ctx.lineWidth = 1.5;
+    var x = cx * CELL + 3, y = cy * CELL + 3, w = CELL - 6;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, w, 5); else ctx.rect(x, y, w, w);
+    ctx.fill(); ctx.stroke();
+  }
+  function drawStart(cx, cy, color) {
+    ctx.fillStyle = color; ctx.font = 'bold ' + CELL * 0.5 + 'px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('★', cx * CELL + CELL / 2, cy * CELL + CELL / 2 + 1);
+  }
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    if (ctx.roundRect) { ctx.roundRect(x, y, w, h, r); ctx.fill(); ctx.stroke(); }
+    else { ctx.rect(x, y, w, h); ctx.fill(); ctx.stroke(); }
+  }
+  function drawPlane(x, y, color, idx, movable) {
+    var r = CELL * 0.36;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 7);
+    ctx.fillStyle = C.COLORS[color].hex;
+    ctx.fill();
+    ctx.lineWidth = movable ? 4 : 2;
+    ctx.strokeStyle = movable ? '#ffffff' : 'rgba(0,0,0,.4)';
+    if (movable) { ctx.save(); ctx.shadowColor = '#fff'; ctx.shadowBlur = 10; ctx.stroke(); ctx.restore(); }
+    else ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold ' + CELL * 0.34 + 'px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(idx + 1), x, y + 1);
+  }
+  function isMovable(pc, pi) {
+    if (S.over || S.busy || S.d === null || S.turn !== pc) return false;
+    if (!S.humans.includes(pc)) return false;
+    return C.movable(S.state, pc, S.d).includes(pi);
+  }
+
+  /* ---------- 流程 ---------- */
+  function startGame() {
+    S.state = C.newState();
+    S.turn = 0; S.d = null; S.over = false; S.busy = false; S.awaitRoll = false;
+    $('setup').classList.add('hidden');
+    $('result').classList.add('hidden');
+    draw(); updateLabels();
+    scheduleRoll('轮到 ' + playerName(0) + '，掷到 6 起飞');
+  }
+  function playerName(c) {
+    if (c === 0) return ($('myName').value.trim().slice(0, 10) || '你');
+    return 'AI-' + C.COLORS[c].name;
+  }
+  function updateLabels() {
+    $('turnLabel').textContent = S.over ? '对局结束' : playerName(S.turn) + ' 的回合';
+    var html = '';
+    for (var c = 0; c < 4; c++) {
+      html += '<span class="pc"><span class="dot" style="background:' + C.COLORS[c].hex + '"></span>' +
+        playerName(c) + ' ' + C.finishedCount(S.state, c) + '/4</span>';
+    }
+    $('planeCounts').innerHTML = html;
+  }
+  /* 掷骰调度：人类点亮按钮等待点击，AI 自动掷 */
+  function scheduleRoll(msg) {
+    updateLabels(); draw();
+    if (S.humans.includes(S.turn)) {
+      S.awaitRoll = true; $('rollBtn').disabled = false;
+      if (msg) toast(msg); else toast('轮到你掷骰子');
+    } else {
+      S.awaitRoll = false; $('rollBtn').disabled = true;
+      if (msg) toast(msg);
+      setTimeout(function () { roll(); }, 650);
+    }
+  }
+
+  $('rollBtn').addEventListener('click', function () {
+    if (S.over || S.busy || S.d !== null || !S.awaitRoll) return;
+    S.awaitRoll = false;
+    roll();
+  });
+
+  function roll() {
+    S.busy = true;
+    $('rollBtn').disabled = true;
+    $('dice').textContent = '?'; $('dice').classList.add('rolling');
+    toast('摇摇摇…');
+    setTimeout(function () {
+      var d = 1 + ((Math.random() * 6) | 0);
+      S.d = d; S.busy = false;
+      $('dice').classList.remove('rolling');
+      $('dice').textContent = d;
+      var ids = C.movable(S.state, S.turn, d);
+      if (!ids.length) {
+        toast(playerName(S.turn) + ' 掷出 ' + d + '，没有可动的飞机');
+        draw();
+        setTimeout(function () { S.d = null; scheduleRoll(); }, 900);
+        return;
+      }
+      draw();
+      if (S.humans.includes(S.turn)) {
+        toast('掷出 ' + d + '，点击发光的飞机移动');
+      } else {
+        setTimeout(function () {
+          var pick = AI.pick(S.state, S.turn, d);
+          if (pick === null) { S.d = null; scheduleRoll(); return; }
+          doMove(S.turn, pick, d);
+        }, 700);
+      }
+    }, 550);
+  }
+
+  function doMove(color, plane, d) {
+    S.busy = true;
+    var r = C.applyMove(S.state, color, plane, d);
+    var parts = [playerName(color) + ' ' + C.COLORS[color].name + '-' + (plane + 1) + ' 走 ' + d + ' 格'];
+    if (r.jumped) parts.push('跳 4 格');
+    if (r.bounced) parts.push('回弹');
+    if (r.captured.length) parts.push('打中 ' + r.captured.length + ' 架敌机！');
+    if (r.pos === C.FINISH) parts.push('✈ 到达！');
+    toast(parts.join(' · '));
+    draw(); updateLabels();
+    var w = C.winner(S.state);
+    if (w !== null) {
+      S.over = true; S.busy = false; S.d = null;
+      updateLabels(); draw();
+      showResult(w);
+      return;
+    }
+    if (r.extra) {
+      S.d = null; S.busy = false;
+      toast(parts.join(' · ') + '，再掷一次！');
+      scheduleRoll();
+      return;
+    }
+    setTimeout(function () {
+      S.d = null; S.busy = false;
+      S.turn = (S.turn + 1) % 4;
+      scheduleRoll();
+    }, 900);
+  }
+  function showResult(w) {
+    $('resultBody').innerHTML = '<div class="win">🏆 ' + playerName(w) + '（' + C.COLORS[w].name + '队）获胜！</div>' +
+      '你的飞机到达：' + C.finishedCount(S.state, 0) + ' / 4';
+    $('result').classList.remove('hidden');
+  }
+
+  /* 点击选择飞机（与真实点击同一处理器路径） */
+  cv.addEventListener('click', function (e) {
+    if (S.d === null || S.busy || S.over || !S.humans.includes(S.turn)) return;
+    var rect = cv.getBoundingClientRect();
+    var gx = (e.clientX - rect.left) / rect.width * 15;
+    var gy = (e.clientY - rect.top) / rect.height * 15;
+    var ids = C.movable(S.state, S.turn, S.d);
+    var best = null, bestD = 1e9;
+    for (const i of ids) {
+      var pos = S.state.players[S.turn].planes[i];
+      var x, y;
+      if (pos === -1) { var hc = C.hangarCell(S.turn, i); x = hc[1] * CELL + CELL; y = hc[0] * CELL + CELL; }
+      else { var co = C.coordOf(S.turn, pos); x = co.rc[1] * CELL + CELL / 2; y = co.rc[0] * CELL + CELL / 2; }
+      var dist = Math.hypot(gx - x / CELL, gy - y / CELL);
+      if (dist < bestD) { bestD = dist; best = i; }
+    }
+    if (best !== null && bestD < 1.4) doMove(S.turn, best, S.d);
+  });
+
+  $('startBtn').addEventListener('click', startGame);
+  $('againBtn').addEventListener('click', function () {
+    $('result').classList.add('hidden');
+    $('setup').classList.remove('hidden');
+  });
+
+  S.state = C.newState();
+  draw();
+})();
+</script>
+</body>
+</html>

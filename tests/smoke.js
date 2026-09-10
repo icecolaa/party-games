@@ -246,6 +246,19 @@ async function main() {
     assert.ok(r.text.includes('掼蛋'), 'missing 掼蛋 card');
   });
 
+  console.log('— 新游戏挂载 —');
+
+  for (const [path, title] of [
+    ['/rps/', '石头剪刀布'], ['/dice/', '摇色子'], ['/flight/', '飞行棋'],
+    ['/doudizhu/', '斗地主'], ['/mahjong/', '麻将'], ['/chess/', '象棋'],
+  ]) {
+    await t(`GET ${path} 返回页面（${title}）`, async () => {
+      const r = await get(port, path);
+      assert.strictEqual(r.status, 200);
+      assert.ok(r.text.includes(title), path + ' 应包含 ' + title);
+    });
+  }
+
   console.log('— 健壮性 —');
 
   await t('null 字节 / 非法编码路径返回 400/404 且服务器存活', async () => {

@@ -12,8 +12,8 @@
 | 游戏 | 入口 | 模式 | 测试 |
 | --- | --- | --- | --- |
 | 五子棋 | /gomoku/ | 人机 + 联机 | 22+12+5 |
-| 德州扑克 | /poker/ | 人机/热座/联机 2~8 人 | 49+6+52+25+22 |
-| 掼蛋 | /guandan/ | 人机 + 联机 4 人两队 | 61+35+20+18 |
+| 德州扑克 | /poker/ | 人机/热座/联机 2~8 人 | 65+6+52+25+22 |
+| 掼蛋 | /guandan/ | 人机 + 联机 4 人两队 | 81+35+fuzz32万+20+18 |
 | 中国象棋 | /chess/ | 三档 AI | 30 |
 | 斗地主 | /doudizhu/ | 叫分抢地主打 2 AI | 35+17 |
 | 麻将 | /mahjong/ | 万筒条碰杠胡打 3 AI | 24+9 |
@@ -69,6 +69,11 @@ npm run deploy             # PocketBay 一键部署（读 ~/.pocketbay 凭证，
 5. 小事：本机 Git Bash 里 `npm test`/`npm run xxx` 子进程可能找不到 node（PATH 问题），直接把 package.json 里的命令用 `node` 逐个执行即可；另有 Git Bash 会把 `</div>` 这类参数当路径转换的坑，统计标签用字符类 `[<]/div` 或 node。
 
 6. **GitHub 镜像（2026-09-12 配置）**：origin 配了双 pushurl（Gitee + GitHub `icecolaa/party-games`），`git push` 一条命令两边同时更新；fetch 仅走 Gitee。GitHub 推送凭证走本地 credential helper（`credential.https://github.com.helper`，实时读环境变量 `GITHUB_TOKEN`，令牌未写入 .git/config）。若 GitHub 推送 403，检查令牌的 Repository access（需 All repositories + Contents 写权限）。
+
+7. **开源调研落地进度（2026-09-12）**：调研报告 `work/github-idea-report.md` §七「采用方案深化」已排 P0~P3。**P0 两项已完成**：
+   - 德州胜率提示：新增 `public/poker/equity.js`（转/河牌精确枚举 `equityExact` + 确定性建议 `suggestAction`），徽章升级「胜率(精确)｜跟注需｜建议」；`aiDecideCore(p, det)` 确定性模式（对战行为不变）；联网模式广播无 `stats` 的防御修复。校准测试见 `poker-test.js` §2b/2c。
+   - 掼蛋差分：`tools/guandan-diff/`（driver.js + harness.py，参考引擎 welkin03/guandan-ai MIT 需 `git clone` 到 `vendor/`，已 gitignore）。首跑修出 4 类引擎真缺陷：同花顺不进 AI 候选、A 低位回绕（A2233/AAA222）不认、三带二万能替换枚举不全、天王炸不进候选；生成改「构造即带解释」+ 新增 `anyInterpretationBeats` 手动出牌兜底。修复后 300 局 missing 归零。fuzz（`gd-fuzz-test.js`，32 万断言）已入 npm test。
+   - P1~P3 待做：象棋 eleeye 服务端档、斗地主 rlcard 差分 oracle、五子棋 rapfi 分析档、xqwlight 浏览器兜底、斗地主 DMC 训练（详见报告 §7.7 优先级表）。
 
 ## 六、验收状态（v2 报告结论）
 

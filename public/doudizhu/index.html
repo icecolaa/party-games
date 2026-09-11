@@ -21,15 +21,15 @@ main { flex:1 1 auto; position:relative; min-height:0; background:radial-gradien
 .seat .tag .cnt { background:var(--accent); color:#23180a; border-radius:999px; padding:0 6px; font-size:11px; font-weight:700; min-width:18px; text-align:center; }
 .seat.active .tag { border-color:var(--accent); box-shadow:0 0 0 2px rgba(240,180,41,.3); }
 .seat-top { top:10px; left:50%; transform:translateX(-50%); }
-.seat-left { left:10px; top:36%; }
-.seat-right { right:10px; top:36%; }
-.seat .played { display:flex; gap:2px; flex-wrap:wrap; justify-content:center; max-width:180px; }
+.seat-left { left:10px; top:36%; align-items:flex-start; }
+.seat-right { right:10px; top:36%; align-items:flex-end; }
+.seat .played { display:flex; gap:2px; flex-wrap:wrap; justify-content:center; max-width:210px; }
 #centerHint { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,.35); padding:5px 14px; border-radius:999px; font-size:13px; color:rgba(255,255,255,.85); white-space:nowrap; }
 #meCards { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); display:flex; gap:2px; }
 .landlord-badge { color:var(--accent); font-weight:700; }
 footer { flex:0 0 auto; background:#141b29; border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); }
 #handWrap { overflow-x:auto; padding:6px 8px 2px; -webkit-overflow-scrolling:touch; }
-#hand { display:flex; align-items:flex-end; min-height:calc(var(--card-h) + 10px); padding-right:var(--card-w); }
+#hand { display:flex; align-items:flex-end; min-height:calc(var(--card-h) + 10px); padding-right:var(--card-w); width:max-content; margin:0 auto; }
 #hand .card { margin-left:-30px; cursor:pointer; } #hand .card:first-child { margin-left:0; }
 #hand .card.sel { transform:translateY(-14px); box-shadow:0 6px 14px rgba(0,0,0,.5), 0 0 0 2px var(--accent); }
 #acts { display:flex; gap:8px; padding:8px 12px; border-top:1px solid var(--line); }
@@ -47,10 +47,13 @@ footer { flex:0 0 auto; background:#141b29; border-top:1px solid var(--line); pa
 .card.joker .r { font-size:8px; letter-spacing:-.3px; top:4px; }
 .card.joker .s { font-size:13px; top:15px; }
 .card.joker::after { content:''; }
-.card.small { width:calc(var(--card-w)*.6); height:calc(var(--card-h)*.6); }
+.card.small { width:calc(var(--card-w)*.68); height:calc(var(--card-h)*.68); }
 .card.small .r { font-size:11px; left:2px; top:2px; }
 .card.small .s { font-size:9px; left:2px; top:14px; }
-.card.small::after { font-size:12px; right:2px; bottom:1px; }
+.card.small::after { font-size:13px; right:2px; bottom:1px; }
+/* 小王/大王：JOKER 字样在小牌上极易溢出，单独压缩字号 */
+.card.small.joker .r { font-size:8px; letter-spacing:0; top:3px; left:2px; }
+.card.small.joker .s { font-size:9px; top:12px; left:2px; }
 .overlay { position:fixed; inset:0; z-index:50; background:rgba(6,10,18,.85); display:flex; align-items:center; justify-content:center; padding:18px; }
 .overlay.hidden { display:none; }
 .panel { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:22px; width:100%; max-width:380px; display:flex; flex-direction:column; gap:12px; max-height:calc(100dvh - 40px); overflow-y:auto; }
@@ -65,7 +68,7 @@ input { width:100%; padding:11px 12px; border-radius:9px; background:var(--panel
 #bidPanel button { padding:10px 16px; border-radius:9px; background:var(--panel2); border:1px solid var(--line); color:var(--text); font-size:14px; font-weight:700; cursor:pointer; }
 #resultBody { text-align:center; font-size:14px; line-height:2; }
 #resultBody .win { color:var(--win); font-weight:800; } #resultBody .lose { color:var(--lose); font-weight:800; }
-@media (max-width: 480px) { :root { --card-w:46px; --card-h:66px; } #hand .card { margin-left:-28px; } .card .r { font-size:13px; } .card .s { font-size:12px; top:17px; } .card::after { font-size:15px; } .seat .tag .n { max-width:50px; } .seat .played { max-width:120px; } }
+@media (max-width: 480px) { :root { --card-w:46px; --card-h:66px; } #hand .card { margin-left:-28px; } .card .r { font-size:13px; } .card .s { font-size:12px; top:17px; } .card::after { font-size:15px; } .seat .tag .n { max-width:50px; } .seat .played { max-width:140px; } }
 /* ---- 图文规则弹窗（统一风格） ---- */
 .rules-ov{position:fixed;inset:0;z-index:90;background:rgba(6,10,18,.88);display:flex;align-items:center;justify-content:center;padding:18px}
 .rules-ov.hidden{display:none}
@@ -390,5 +393,6 @@ input { width:100%; padding:11px 12px; border-radius:9px; background:var(--panel
 })();
 </script>
 
+<script src="/nav.js"></script>
 </body>
 </html>

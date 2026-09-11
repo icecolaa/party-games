@@ -12,7 +12,7 @@ const crypto = require('crypto');
 const { JSDOM } = require(path.join(__dirname, '..', 'node_modules', 'jsdom'));
 
 const root = path.join(__dirname, '..');
-const { server } = require(path.join(root, 'server.js'));
+const { server } = require(path.join(root, '..', '..', 'servers', 'poker-standalone.js'));
 const PORT = 8897;
 
 let passed = 0, failed = 0;

@@ -1,7 +1,7 @@
 'use strict';
 /* 联机服务器 API 测试：node test-mp.js */
 const assert = require('assert');
-const { buildServer } = require('./server.js');
+const { buildServer } = require('../../servers/wuziqi-standalone.js');
 
 let failures = 0, cases = 0;
 async function t(name, fn) {

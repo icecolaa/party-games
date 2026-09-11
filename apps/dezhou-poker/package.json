@@ -2,9 +2,9 @@
   "name": "dezhou-poker",
   "version": "1.0.0",
   "description": "智能德州扑克：单机AI/双人本地热座/联网房间对战，蒙特卡洛策略AI，支持2~8人",
-  "main": "server.js",
+  "main": "../../servers/poker-standalone.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node ../../servers/poker-standalone.js",
     "test": "node tests/poker-test.js && node tests/net-e2e.js",
     "test:ui": "node tests/ui-test.js && node tests/ui-hotseat-test.js && node tests/ui-net-test.js"
   },

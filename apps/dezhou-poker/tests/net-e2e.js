@@ -8,7 +8,7 @@
 const http = require('http');
 const crypto = require('crypto');
 const path = require('path');
-const { server } = require(path.join(__dirname, '..', 'server.js'));
+const { server } = require(path.join(__dirname, '..', '..', '..', 'servers', 'poker-standalone.js'));
 
 const PORT = 8898;
 

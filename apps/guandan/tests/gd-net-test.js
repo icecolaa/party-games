@@ -8,7 +8,7 @@ const http = require('http');
 const crypto = require('crypto');
 const path = require('path');
 process.env.PING_INTERVAL_MS = '200'; // 缩短心跳，断连感知 <1s（须在 require 之前设置）
-const { server } = require(path.join(__dirname, '..', 'server.js'));
+const { server } = require(path.join(__dirname, '..', '..', '..', 'servers', 'guandan-standalone.js'));
 
 const PORT = 8701;
 let passed = 0, failed = 0;

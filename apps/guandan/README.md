@@ -16,7 +16,7 @@
 ## 运行
 
 ```bash
-node server.js          # 联机服务器，默认端口 8700
+node ../../servers/guandan-standalone.js          # 联机服务器，默认端口 8700
 # 或直接双击 index.html 玩人机对战（联机需启动服务器）
 ```
 

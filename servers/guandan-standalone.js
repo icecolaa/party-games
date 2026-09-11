@@ -14,7 +14,7 @@ const path = require('path');
 const crypto = require('crypto');
 const vm = require('vm');
 
-const root = __dirname;
+const root = path.join(__dirname, '..', 'apps', 'guandan');
 const port = Number(process.env.PORT) || 8700;
 const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8' };
 

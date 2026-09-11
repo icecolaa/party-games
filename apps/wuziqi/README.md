@@ -6,7 +6,7 @@
 
 ## 运行方式
 
-- **本地完整服务**（人机 + 联机）：`node server.js` 后访问 <http://127.0.0.1:8642/>（可用 `PORT` 环境变量改端口）
+- **本地完整服务**（人机 + 联机）：`node ../../servers/wuziqi-standalone.js` 后访问 <http://127.0.0.1:8642/>（可用 `PORT` 环境变量改端口）
 - **纯人机**：双击 `index.html` 直接玩（无联机功能）
 - **部署**： PocketBay 等 PaaS 直接上传 `package.json` / `server.js` / `index.html` / `ai.js` 打包即可，平台会以 `npm start` 启动并注入 `PORT`
 

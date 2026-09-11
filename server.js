@@ -16,9 +16,9 @@ const ROOT = __dirname;
 const HOME_DIR = path.join(ROOT, 'apps', 'home');
 const PORT = Number(process.env.PORT) || 8600;
 
-const gomoku = require('./apps/wuziqi/server.js');
-const poker = require('./apps/dezhou-poker/server.js');
-const guandan = require('./apps/guandan/server.js');
+const gomoku = require('./servers/wuziqi-standalone.js');
+const poker = require('./servers/poker-standalone.js');
+const guandan = require('./servers/guandan-standalone.js');
 
 /* 游戏注册表：新增聚会游戏时在 apps/ 下建目录并在登记一项即可。
  * mount   浏览器访问前缀，如 /gomoku/

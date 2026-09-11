@@ -33,17 +33,16 @@ npm start          # 启动统一服务器，默认 http://127.0.0.1:8600/
 平台以 `npm start` 启动（服务器已按 `0.0.0.0` 绑定，`PORT` 由平台注入）。上传约定：
 
 - 打包**仓库根目录整体**为一个应用（`zip` / `tar.gz`，排除 `.git`、`node_modules`）
-- 打包时**必须排除** `apps/wuziqi/package.json`、`apps/dezhou-poker/package.json`、`apps/guandan/package.json`
-  （它们仅用于本地独立运行；平台按 package.json 识别产品，多出一个会报
-  `application_ambiguous` 拒绝部署）
-- 若平台要求选择「这次要发布哪一个」，选择**根目录产品**（统一入口：游戏大厅 + 全部游戏），
-  不要选择单个游戏子目录，也不要拆成多个站点
+- 一键部署：`npm run deploy`（读取本机 `~/.pocketbay/credentials.json` 令牌，零确认）
+- 部署包只含**根产品**：各游戏的独立运行入口已迁移至 `servers/`（部署包中
+  `apps/*` 不再包含 `package.json`/`server.js`，平台不会误判为多个产品）
 - 部署成功后联机接口与 WebSocket 均走平台分配的同一域名，无需额外配置
 
 ## 目录结构
 
 ```
 server.js                 统一入口：游戏大厅 + 各游戏路由挂载
+servers/                  各游戏独立运行入口（本地开发调试用，部署不需要）
 apps/home/                游戏大厅页面
 apps/wuziqi/              五子棋（人机 + 联机）
 apps/dezhou-poker/        德州扑克（单机 / 热座 / 联网）

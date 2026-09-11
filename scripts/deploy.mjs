@@ -25,7 +25,7 @@ const scrub = (v) => {
   return v;
 };
 
-const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url))).split(path.sep).join('/');
 const NAME = 'party-games';
 const SUB_PKG = ['wuziqi', 'dezhou-poker', 'guandan', 'chess', 'doudizhu', 'mahjong', 'flight', 'dice', 'rps'];
 
@@ -49,7 +49,7 @@ const excludes = [
 ];
 const items = ['.gitignore', 'LICENSE', 'README.md', 'apps', 'package.json', 'server.js', 'tests'];
 if (fs.existsSync(path.join(ROOT, 'scripts'))) items.push('scripts');
-execSync(`tar -C "${ROOT}" -czf "${tarball}" ${excludes.join(' ')} ${items.join(' ')}`, { stdio: 'inherit' });
+execSync(`tar --force-local -C "${ROOT}" -czf "${tarball}" ${excludes.join(' ')} ${items.join(' ')}`, { stdio: 'inherit' });
 const size = (fs.statSync(tarball).size / 1024).toFixed(1);
 console.log(`打包完成：${tarball}（${size} KB）`);
 

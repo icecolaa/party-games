@@ -1,6 +1,6 @@
 'use strict';
 /* 麻将核心测试：胡牌判定 / 听牌 / 碰杠 / 番数 */
-const M = require('../js/mj-core.js');
+const M = require('../../../public/mahjong/js/mj-core.js');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.error('  ✗ ' + m); } };
 

@@ -16,7 +16,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* jsdom 不加载外部脚本：剥离 script 标签后按页面原顺序手动执行 */
 function bootPage() {
-  const raw = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+  const raw = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'gomoku', 'index.html'), 'utf8');
   const html = raw.replace(/<script[^>]*><\/script>/g, '');
   const pageErrors = [];
   const vc = new VirtualConsole();
@@ -44,7 +44,7 @@ function bootPage() {
     }
   });
   const { window } = dom;
-  window.eval(fs.readFileSync(path.join(__dirname, 'ai.js'), 'utf8')); // 原 <script src="ai.js">
+  window.eval(fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'gomoku', 'ai.js'), 'utf8')); // 原 <script src="ai.js">
   window.eval(raw.match(/<script>([\s\S]*?)<\/script>/)[1]);           // 原内联页面脚本
   return { window, pageErrors };
 }

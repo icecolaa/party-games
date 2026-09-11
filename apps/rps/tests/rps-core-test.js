@@ -1,6 +1,6 @@
 'use strict';
 /* 石头剪刀布核心测试 */
-const R = require('../js/rps-core.js');
+const R = require('../../../public/rps/js/rps-core.js');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.error('  ✗ ' + m); } };
 

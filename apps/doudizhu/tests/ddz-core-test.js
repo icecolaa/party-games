@@ -1,6 +1,6 @@
 'use strict';
 /* 斗地主核心测试：牌型识别 / 比较 / 候选生成 */
-const C = require('../js/ddz-core.js');
+const C = require('../../../public/doudizhu/js/ddz-core.js');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.error('  ✗ ' + m); } };
 

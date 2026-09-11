@@ -1,7 +1,7 @@
 'use strict';
 /* 飞行棋核心测试 */
-const C = require('../js/flight-core.js');
-const AI = require('../js/flight-ai.js');
+const C = require('../../../public/flight/js/flight-core.js');
+const AI = require('../../../public/flight/js/flight-ai.js');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.error('  ✗ ' + m); } };
 

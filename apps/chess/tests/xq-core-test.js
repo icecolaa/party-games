@@ -2,8 +2,8 @@
 /* ============================================================
  * 象棋核心测试：开局 / 走法规则 / 将军 / 绝杀 / AI 对局
  * ============================================================ */
-const C = require('../js/xq-core.js');
-const AI = require('../js/xq-ai.js');
+const C = require('../../../public/chess/js/xq-core.js');
+const AI = require('../../../public/chess/js/xq-ai.js');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.error('  ✗ ' + m); } };
 const idx = (r, c) => r * 9 + c;

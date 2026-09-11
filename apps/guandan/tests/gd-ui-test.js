@@ -21,7 +21,7 @@ const t = (name, fn) => {
 const ok = (cond, msg) => { if (!cond) throw new Error(msg || 'assertion failed'); };
 
 function bootPage() {
-  const raw = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const raw = fs.readFileSync(path.join(root, '..', '..', 'public', 'guandan', 'index.html'), 'utf8');
   const html = raw.replace(/<script[^>]*><\/script>/g, '');
   const pageErrors = [];
   const vc = new VirtualConsole();
@@ -34,8 +34,8 @@ function bootPage() {
   });
   const { window } = dom;
   // 按页面顺序注入脚本（jsdom 不加载外链）
-  for (const f of ['js/gd-core.js', 'js/gd-ai.js', 'js/gd-game.js', 'js/gd-ui.js']) {
-    window.eval(fs.readFileSync(path.join(root, f), 'utf8'));
+  for (const f of ['gd-core.js', 'gd-ai.js', 'gd-game.js', 'gd-ui.js']) {
+    window.eval(fs.readFileSync(path.join(root, '..', '..', 'public', 'guandan', 'js', f), 'utf8'));
   }
   window.document.dispatchEvent(new window.Event('DOMContentLoaded', { bubbles: true }));
   return { window, pageErrors };
@@ -192,18 +192,18 @@ function bootPage() {
     ok(vp && vp.content.indexOf('viewport-fit=cover') >= 0, '应含 viewport-fit=cover');
   });
   t('样式表含移动端媒体查询', () => {
-    const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
+    const css = fs.readFileSync(path.join(root, '..', '..', 'public', 'guandan', 'css', 'style.css'), 'utf8');
     ok(css.indexOf('@media (max-width: 480px)') >= 0, '应有小屏断点');
     ok(css.indexOf('env(safe-area-inset-bottom)') >= 0, '应适配底部安全区');
     ok(css.indexOf('--card-w') >= 0, '卡牌尺寸应用 CSS 变量（便于响应式）');
   });
   t('窄屏下卡牌尺寸变小', () => {
-    const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
+    const css = fs.readFileSync(path.join(root, '..', '..', 'public', 'guandan', 'css', 'style.css'), 'utf8');
     const m = css.match(/@media \(max-width: 480px\) \{[\s\S]*?--card-w:\s*(\d+)px/);
     ok(m && Number(m[1]) < 62, '窄屏卡牌宽度应小于默认 62px，实际 ' + (m && m[1]));
   });
   t('手牌叠放时左上角牌面可辨认', () => {
-    const css = fs.readFileSync(path.join(root, 'css/style.css'), 'utf8');
+    const css = fs.readFileSync(path.join(root, '..', '..', 'public', 'guandan', 'css', 'style.css'), 'utf8');
     // 点数与花色定位在左上角（而非居中），叠放才看得见
     ok(/\.card \.r,\s*\.card \.s\s*\{[^}]*position:\s*absolute/.test(css), '点数/花色应绝对定位');
     ok(/\.card \.r\s*\{[^}]*top:\s*\d+px/.test(css), '点数应贴顶');

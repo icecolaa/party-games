@@ -1,6 +1,6 @@
 'use strict';
 /* 摇色子核心测试 */
-const D = require('../js/dice-core.js');
+const D = require('../../../public/dice/js/dice-core.js');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.error('  ✗ ' + m); } };
 

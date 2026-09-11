@@ -1,7 +1,7 @@
 'use strict';
 /* 斗地主引擎测试：发牌 / 叫分 / 整局 AI 自动对局 */
-const Game = require('../js/ddz-game.js');
-const C = require('../js/ddz-core.js');
+const Game = require('../../../public/doudizhu/js/ddz-game.js');
+const C = require('../../../public/doudizhu/js/ddz-core.js');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.error('  ✗ ' + m); } };
 

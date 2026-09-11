@@ -1,7 +1,7 @@
 'use strict';
 /* 五子棋 AI 逻辑自动化测试：node test.js */
 const assert = require('assert');
-const G = require('./ai.js');
+const G = require('../../public/gomoku/ai.js');
 
 const B = G.BLACK, W = G.WHITE;
 let failures = 0, cases = 0;

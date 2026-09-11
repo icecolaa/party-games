@@ -5,7 +5,7 @@ const path = require('path');
 const vm = require('vm');
 
 const root = path.join(__dirname, '..');
-const src = fs.readFileSync(path.join(root, 'js/poker-core.js'), 'utf8');
+const src = fs.readFileSync(path.join(root, '../../public/poker/js/poker-core.js'), 'utf8');
 const ctx = { console, Math, Set, Promise };
 vm.createContext(ctx);
 vm.runInContext(src, ctx);

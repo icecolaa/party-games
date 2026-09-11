@@ -9,7 +9,7 @@ const path = require('path');
 const { JSDOM } = require(path.join(__dirname, '..', 'node_modules', 'jsdom'));
 
 const root = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8')
+const html = fs.readFileSync(path.join(root, '..', '..', 'public', 'poker', 'index.html'), 'utf8')
   .replace(/<script src="[^"]*"><\/script>/g, '');
 
 const dom = new JSDOM(html, { url: 'http://127.0.0.1:8899/index.html', runScripts: 'outside-only', pretendToBeVisual: true });
@@ -29,7 +29,7 @@ const load = f => window.eval(
     .replace(/^'use strict';/, '')
     .replace(new RegExp('\\bconst\\s+(' + SHARED.join('|') + ')\\b', 'g'), 'var $1')
 );
-['js/poker-core.js', 'js/poker-ai.js', 'js/poker-game.js', 'js/poker-ui.js', 'js/main.js'].forEach(load);
+['../../public/poker/js/poker-core.js', '../../public/poker/js/poker-ai.js', '../../public/poker/js/poker-game.js', '../../public/poker/js/poker-ui.js', '../../public/poker/js/main.js'].forEach(load);
 
 document.dispatchEvent(new window.Event('DOMContentLoaded', { bubbles: true }));
 

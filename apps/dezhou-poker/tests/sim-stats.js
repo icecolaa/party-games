@@ -5,7 +5,7 @@ const path = require('path');
 const vm = require('vm');
 
 const root = path.join(__dirname, '..');
-const src = ['js/poker-core.js', 'js/poker-ai.js', 'js/poker-game.js']
+const src = ['../../public/poker/js/poker-core.js', '../../public/poker/js/poker-ai.js', '../../public/poker/js/poker-game.js']
   .map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
 const ctx = { console, Math, Date, Set, Promise, setTimeout, clearTimeout, setInterval, clearInterval, window: { __uiLog: () => {} } };
 vm.createContext(ctx);

@@ -13,7 +13,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = __dirname;
-const HOME_DIR = path.join(ROOT, 'apps', 'home');
+const HOME_DIR = path.join(ROOT, 'public');
 const PORT = Number(process.env.PORT) || 8600;
 
 const gomoku = require('./servers/wuziqi-standalone.js');
@@ -26,15 +26,15 @@ const guandan = require('./servers/guandan-standalone.js');
  * api     可选：处理挂载前缀下的 HTTP 请求，入参为去掉前缀后的 pathname，返回 true 表示已处理
  * upgrade 可选：处理该前缀下的 WebSocket 升级请求 */
 const GAMES = [
-  { id: 'gomoku', mount: '/gomoku', root: path.join(ROOT, 'apps', 'wuziqi'), api: gomoku.handleApi },
-  { id: 'poker', mount: '/poker', root: path.join(ROOT, 'apps', 'dezhou-poker'), upgrade: poker.handleUpgrade },
-  { id: 'guandan', mount: '/guandan', root: path.join(ROOT, 'apps', 'guandan'), upgrade: guandan.handleUpgrade },
-  { id: 'rps', mount: '/rps', root: path.join(ROOT, 'apps', 'rps') },
-  { id: 'dice', mount: '/dice', root: path.join(ROOT, 'apps', 'dice') },
-  { id: 'flight', mount: '/flight', root: path.join(ROOT, 'apps', 'flight') },
-  { id: 'doudizhu', mount: '/doudizhu', root: path.join(ROOT, 'apps', 'doudizhu') },
-  { id: 'mahjong', mount: '/mahjong', root: path.join(ROOT, 'apps', 'mahjong') },
-  { id: 'chess', mount: '/chess', root: path.join(ROOT, 'apps', 'chess') }
+  { id: 'gomoku', mount: '/gomoku', root: path.join(ROOT, 'public', 'gomoku'), api: gomoku.handleApi },
+  { id: 'poker', mount: '/poker', root: path.join(ROOT, 'public', 'poker'), upgrade: poker.handleUpgrade },
+  { id: 'guandan', mount: '/guandan', root: path.join(ROOT, 'public', 'guandan'), upgrade: guandan.handleUpgrade },
+  { id: 'rps', mount: '/rps', root: path.join(ROOT, 'public', 'rps') },
+  { id: 'dice', mount: '/dice', root: path.join(ROOT, 'public', 'dice') },
+  { id: 'flight', mount: '/flight', root: path.join(ROOT, 'public', 'flight') },
+  { id: 'doudizhu', mount: '/doudizhu', root: path.join(ROOT, 'public', 'doudizhu') },
+  { id: 'mahjong', mount: '/mahjong', root: path.join(ROOT, 'public', 'mahjong') },
+  { id: 'chess', mount: '/chess', root: path.join(ROOT, 'public', 'chess') }
 ];
 
 const MIME = {

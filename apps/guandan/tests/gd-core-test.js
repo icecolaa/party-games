@@ -4,7 +4,7 @@
  * 覆盖牌型识别、逢人配、炸弹层级、比较关系、候选生成
  * ============================================================ */
 
-const C = require('../js/gd-core.js');
+const C = require('../../../public/guandan/js/gd-core.js');
 
 let pass = 0, fail = 0;
 function ok(cond, msg) {

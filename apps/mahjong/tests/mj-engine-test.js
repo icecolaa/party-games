@@ -1,7 +1,7 @@
 'use strict';
 /* 麻将引擎测试：发牌 / 全 AI 自动对局 / 碰杠路径 / 计分 */
-const Game = require('../js/mj-game.js');
-const C = require('../js/mj-core.js');
+const Game = require('../../../public/mahjong/js/mj-game.js');
+const C = require('../../../public/mahjong/js/mj-core.js');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.error('  ✗ ' + m); } };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

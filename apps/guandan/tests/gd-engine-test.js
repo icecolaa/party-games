@@ -4,9 +4,9 @@
  * 覆盖发牌、出牌校验、轮次推进、全 AI 自动对局、升级结算
  * ============================================================ */
 
-const Game = require('../js/gd-game.js');
-const C = require('../js/gd-core.js');
-const AI = require('../js/gd-ai.js');
+const Game = require('../../../public/guandan/js/gd-game.js');
+const C = require('../../../public/guandan/js/gd-core.js');
+const AI = require('../../../public/guandan/js/gd-ai.js');
 
 let pass = 0, fail = 0;
 const ok = (cond, msg) => { if (cond) pass++; else { fail++; console.error('  ✗ ' + msg); } };

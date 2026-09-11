@@ -4,9 +4,9 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const G = require('../apps/wuziqi/ai.js');
+const G = require('../public/gomoku/ai.js');
 
-const ROOT = path.join(__dirname, '..', 'apps', 'wuziqi');
+const ROOT = path.join(__dirname, '..', 'public', 'gomoku');
 const PORT = Number(process.env.PORT) || 8642;
 const HOST = '0.0.0.0';
 

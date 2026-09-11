@@ -11,6 +11,8 @@ const assert = require('assert');
 const { JSDOM, VirtualConsole } = require(path.join(__dirname, '..', 'apps', 'guandan', 'node_modules', 'jsdom'));
 
 const ROOT = path.join(__dirname, '..');
+/* app 名 → public/ 前端目录（前端已统一迁移至 public/ 单一前端树） */
+const PUB = { wuziqi: 'gomoku', 'dezhou-poker': 'poker', guandan: 'guandan', chess: 'chess', doudizhu: 'doudizhu', mahjong: 'mahjong', flight: 'flight', dice: 'dice', rps: 'rps' };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* 各页面：外链脚本注入清单 / 内联脚本是否执行 / 是否需要 canvas 桩 / 入口按钮 id */
@@ -27,7 +29,7 @@ const PAGES = [
 ];
 
 function boot(page) {
-  const root = path.join(ROOT, 'apps', page.app);
+  const root = path.join(ROOT, 'public', PUB[page.app]);
   const raw = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const html = raw.replace(/<script src=[^>]*><\/script>/g, '');
   const errs = [];

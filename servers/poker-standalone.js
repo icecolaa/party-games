@@ -14,7 +14,7 @@ const path = require('path');
 const crypto = require('crypto');
 const vm = require('vm');
 
-const root = path.join(__dirname, '..', 'apps', 'dezhou-poker');
+const root = path.join(__dirname, '..', 'public', 'poker');
 const port = process.env.PORT || 8899;
 const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json' };
 

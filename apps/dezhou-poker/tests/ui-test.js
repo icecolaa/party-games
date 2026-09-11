@@ -9,7 +9,7 @@ const path = require('path');
 const { JSDOM } = require(path.join(__dirname, '..', 'node_modules', 'jsdom'));
 
 const root = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8')
+const html = fs.readFileSync(path.join(root, '..', '..', 'public', 'poker', 'index.html'), 'utf8')
   .replace(/<script src="[^"]*"><\/script>/g, ''); // 手动按序注入
 
 const dom = new JSDOM(html, { url: 'http://127.0.0.1:8899/index.html?auto=0', runScripts: 'outside-only', pretendToBeVisual: true });
@@ -34,11 +34,11 @@ const load = (f) => window.eval(
 );
 
 try {
-  load('js/poker-core.js');
-  load('js/poker-ai.js');
-  load('js/poker-game.js');
-  load('js/poker-ui.js');
-  load('js/main.js');
+  load('../../public/poker/js/poker-core.js');
+  load('../../public/poker/js/poker-ai.js');
+  load('../../public/poker/js/poker-game.js');
+  load('../../public/poker/js/poker-ui.js');
+  load('../../public/poker/js/main.js');
 } catch (e) { console.error('脚本加载失败:', e); process.exit(1); }
 
 // 触发 DOMContentLoaded 绑定

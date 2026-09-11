@@ -150,6 +150,7 @@ const DdzCore = (function () {
 
   /* 人类出牌校验：识别全部解释，任一能压上家即合法 */
   function canPlay(cards, prev) {
+    if (prev && prev.play) prev = prev.play; // 兼容引擎 { seat, play, cards } 包装形状
     const ids = identify(cards);
     for (const p of ids) if (beats(p, prev)) return { ok: true, play: p, alts: ids };
     if (ids.length) return { ok: false, reason: 'not_beating', play: ids[0], alts: ids };
@@ -158,6 +159,7 @@ const DdzCore = (function () {
 
   /* ---------- 候选生成（AI 用）：给定跟牌上下文生成全部合法出法 ---------- */
   function genPlays(hand, prev) {
+    if (prev && prev.play) prev = prev.play; // 兼容引擎 { seat, play, cards } 包装形状
     const res = [];
     const seen = new Set();
     const m = counts(hand);

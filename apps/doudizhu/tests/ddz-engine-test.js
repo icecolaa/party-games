@@ -61,6 +61,36 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.error('  ✗ ' + m)
     ok(!r.ok && r.reason === 'card_not_in_hand', '不存在的牌被拒');
   }
 
+  console.log('— 跟牌规则（回归：包装对象传参导致跟牌恒被拒）—');
+  {
+    // 回归背景：Game.play 曾把 { seat, play, cards } 包装整体传给 canPlay，
+    // beats 里 b.type === undefined → 一切非炸弹跟牌都报「压不过上家」。
+    // 这里用真实引擎流程验证：单张 2（rank15，仅次于双王）必须能压单张 3。
+    const deck = C.makeDeck();
+    const two = deck.find((c) => c.rank === 15 && c.suit === 1); // 2♥
+    const three = deck.find((c) => c.rank === 3 && c.suit === 2); // 3♣
+    const filler = deck.filter((c) => c.rank >= 6 && c.rank <= 9).slice(0, 3);
+    const junk = deck.find((c) => c.rank === 10 && c.suit === 0);
+    Game.startGame({
+      players: [{ name: '你', isHuman: true }, { name: 'AI 甲', isHuman: false }, { name: 'AI 乙', isHuman: false }],
+    });
+    const G = Game.G;
+    G.phase = 'playing'; G.landlord = 0; G.turn = 2;
+    G.players[0].hand = [two, junk]; // 留一张，避免出完即终局
+    G.players[1].hand = filler.slice(0, 2);
+    G.players[2].hand = [three, filler[2]];
+    const lead = Game.play(2, [three.id]);
+    ok(lead.ok, '乙出单张 3');
+    ok(G.prev && G.prev.play && G.prev.play.type === 'single' && G.prev.play.main === 3, 'prev 记录为单张 3');
+    const follow = Game.play(0, [two.id]);
+    ok(follow.ok, '单张 2 压过单张 3（不再误报压不过）');
+    // 反向：出牌权给乙（上家），小牌压不过刚出的 2
+    G.turn = 2;
+    G.players[2].hand = [three];
+    const reject = Game.play(2, [three.id]);
+    ok(!reject.ok && reject.reason === 'not_beating', '单张 3 压不过单张 2 被正确拒绝');
+  }
+
   console.log('— 全 AI 自动对局（20 局）—');
   {
     Game.G.fastMode = true;

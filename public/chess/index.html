@@ -99,7 +99,8 @@ input { width:100%; padding:11px 12px; border-radius:9px; background:var(--panel
       <div class="seg" id="diffSeg">
         <button data-d="easy">入门</button>
         <button data-d="normal" class="active">进阶</button>
-        <button data-d="hard">大师</button>
+        <button data-d="hard">困难</button>
+        <button data-d="engine" title="服务端 UCCI 引擎（如象眼），未接入时自动回落本地引擎">棋神</button>
       </div>
     </div>
     <button id="startBtn" class="primary">开始对局（你执红先行）</button>
@@ -116,12 +117,14 @@ input { width:100%; padding:11px 12px; border-radius:9px; background:var(--panel
 
 <script src="js/xq-core.js?v=1.0.1"></script>
 <script src="js/xq-ai.js?v=1.1.0"></script>
+<script src="js/xq-engine.js?v=1.0.0"></script>
 <script>
 (function () {
   'use strict';
-  var C = window.XqCore, AI = window.XqAI;
+  var C = window.XqCore, AI = window.XqAI, ENG = window.XqEngine;
   var $ = function (id) { return document.getElementById(id); };
   var S = { st: null, sel: -1, legal: [], lastTo: -1, busy: false, level: 'normal', thinking: false };
+  var engineClient = ENG ? ENG.createClient({ workerUrl: 'js/engine-worker.js?v=1.0.0', timeMs: 1500 }) : null;
 
   function buildBoard() {
     var bd = $('board');
@@ -203,19 +206,38 @@ input { width:100%; padding:11px 12px; border-radius:9px; background:var(--panel
     S.sel = -1; S.legal = []; S.lastTo = t;
     render();
     if (S.st.over) { showResult(); return; }
-    msg('AI 思考中…');
+    msg(S.level === 'engine' ? '引擎思考中…' : 'AI 思考中…');
     S.busy = true;
-    setTimeout(function () {
-      var mv = AI.pickBest(S.st, S.level);
+    aiMove().then(function (mv) {
       S.busy = false;
-      if (!mv) { render(); return; }
-      var r2 = C.move(S.st, mv[0], mv[1]);
-      S.sel = -1; S.legal = []; S.lastTo = mv[1];
+      if (mv) {
+        var r2 = C.move(S.st, mv[0], mv[1]);
+        if (r2.ok) { S.lastTo = mv[1]; }
+      }
       render();
       if (S.st.over) { showResult(); return; }
-      if (C.inCheck(S.st.board, 'r')) msg('将军！该你了');
+      if (engineFallback) msg('引擎不可用，已用本地棋力应对');
+      else if (C.inCheck(S.st.board, 'r')) msg('将军！该你了');
       else msg('轮到你，点击棋子移动');
-    }, 120);
+    });
+  }
+  /* 棋神档三级回退：服务端 UCCI 引擎 → xqwlight Worker → 本地 JS AI（hard）。
+   * 引擎返回着法先过合法校验再落子。 */
+  var engineFallback = false;
+  function legalMove(mv) {
+    return C.genLegal(S.st.board, S.st.turn).some(function (m) { return m[0] === mv[0] && m[1] === mv[1]; });
+  }
+  function aiMove() {
+    if (S.level !== 'engine' || !engineClient) {
+      return Promise.resolve(AI.pickBest(S.st, S.level));
+    }
+    engineFallback = false;
+    return engineClient.pickMove(S.st).then(function (mvStr) {
+      var mv = mvStr ? ENG.fromUcciMove(mvStr) : null;
+      if (mv && legalMove(mv)) return mv;
+      engineFallback = true;
+      return AI.pickBest(S.st, 'hard');
+    });
   }
   function moveErr(code) {
     return ({ game_over: '对局已结束', empty: '这里没有棋子', not_your_piece: '不是你的棋子', illegal_move: '不合规的走法' })[code] || '走法不合法';

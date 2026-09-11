@@ -19,6 +19,12 @@ const PORT = Number(process.env.PORT) || 8600;
 const gomoku = require('./servers/wuziqi-standalone.js');
 const poker = require('./servers/poker-standalone.js');
 const guandan = require('./servers/guandan-standalone.js');
+const chessEngine = require('./servers/chess-engine.js');
+const gomokuEngine = require('./servers/gomoku-engine.js');
+
+/* 五子棋：引擎分析 API（/gomoku/api/health|analyze）优先，未命中回落联机房间 API */
+const gomokuApi = (req, res, rest, url) =>
+  (gomokuEngine.handleApi(req, res, rest) ? true : gomoku.handleApi(req, res, rest, url));
 
 /* 游戏注册表：新增聚会游戏时在 apps/ 下建目录并在登记一项即可。
  * mount   浏览器访问前缀，如 /gomoku/
@@ -26,7 +32,7 @@ const guandan = require('./servers/guandan-standalone.js');
  * api     可选：处理挂载前缀下的 HTTP 请求，入参为去掉前缀后的 pathname，返回 true 表示已处理
  * upgrade 可选：处理该前缀下的 WebSocket 升级请求 */
 const GAMES = [
-  { id: 'gomoku', mount: '/gomoku', root: path.join(ROOT, 'public', 'gomoku'), api: gomoku.handleApi },
+  { id: 'gomoku', mount: '/gomoku', root: path.join(ROOT, 'public', 'gomoku'), api: gomokuApi },
   { id: 'poker', mount: '/poker', root: path.join(ROOT, 'public', 'poker'), upgrade: poker.handleUpgrade },
   { id: 'guandan', mount: '/guandan', root: path.join(ROOT, 'public', 'guandan'), upgrade: guandan.handleUpgrade },
   { id: 'rps', mount: '/rps', root: path.join(ROOT, 'public', 'rps') },
@@ -34,7 +40,7 @@ const GAMES = [
   { id: 'flight', mount: '/flight', root: path.join(ROOT, 'public', 'flight') },
   { id: 'doudizhu', mount: '/doudizhu', root: path.join(ROOT, 'public', 'doudizhu') },
   { id: 'mahjong', mount: '/mahjong', root: path.join(ROOT, 'public', 'mahjong') },
-  { id: 'chess', mount: '/chess', root: path.join(ROOT, 'public', 'chess') }
+  { id: 'chess', mount: '/chess', root: path.join(ROOT, 'public', 'chess'), api: chessEngine.handleApi }
 ];
 
 const MIME = {

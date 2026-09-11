@@ -122,6 +122,20 @@ async function main() {
     assert.ok(r.text.includes('href="/poker/"'), 'missing /poker/ link');
   });
 
+  await t('大厅包含全部 9 个游戏的入口卡片', async () => {
+    const r = await get(port, '/');
+    const games = ['gomoku', 'poker', 'guandan', 'chess', 'doudizhu', 'mahjong', 'flight', 'dice', 'rps'];
+    for (const g of games) assert.ok(r.text.includes(`href="/${g}/"`), `missing /${g}/ link`);
+    assert.strictEqual((r.text.match(/class="card ready"/g) || []).length, 9, '应有 9 张可开玩卡片');
+  });
+
+  await t('大厅无底部调试文字且背景视口锚定', async () => {
+    const r = await get(port, '/');
+    assert.ok(!r.text.includes('npm start'), '本地启动调试文字应保持移除');
+    assert.ok(!r.text.includes('127.0.0.1:8600'), '本地地址调试文字应保持移除');
+    assert.ok(r.text.includes('background-attachment: fixed'), '背景应视口锚定避免滚动断层');
+  });
+
   console.log('— 五子棋挂载 —');
 
   await t('/gomoku 301 重定向到 /gomoku/', async () => {

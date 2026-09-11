@@ -96,4 +96,6 @@ f787550 feat: 五个新游戏（掼蛋此前单独提交）
 1. 读本文档 → `npm test` 确认全绿 → `npm start` 起本地验证。
 2. 若用户报线上问题：先 `curl -A "Mozilla/5.0" https://party-games.pocketbay.app/health`（**必须带浏览器 UA**，裸 curl 会被平台边缘判 204）区分「休眠 204」与真实故障。
 3. 改代码后：`npm test` → `git commit/push` → `npm run deploy`（或 `node scripts/deploy.mjs`）。
+   **提交后必须 review 当前改动**：明显 Bug / 破坏已有功能 / 未使用变量与调试代码 / 测试缺口，
+   先列问题清单再修文件，修复一并提交（2026-09-11 用户要求的固定流程）。
 4. 验收类任务：沿用 `E:\code\party-games-acceptance\` 的 jsdom 验收脚本模式（boot 页面 → 逐按钮 → 三态输入 → 结果 JSON）。

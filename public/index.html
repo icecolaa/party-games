@@ -10,7 +10,7 @@
     --card: rgba(255, 255, 255, 0.06);
     --card-hover: rgba(255, 255, 255, 0.12);
     --text: #f3f0ff; --text-dim: #9a94b8;
-    --accent: #ffd166; --accent2: #ef476f;
+    --accent: #ffd166;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   /* 渐变铺在整份文档上（随内容增长），滚动不再出现断层硬边 */
@@ -63,9 +63,10 @@
     background: var(--card-hover);
     border-color: rgba(255, 209, 102, 0.55);
   }
-  .card .top { display: flex; align-items: center; gap: 10px; }
+  /* 标题行全局允许换行 + 标题不缩：窄卡上徽章放不下时自动移到下一行，标题永不被挤成竖排 */
+  .card .top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; row-gap: 2px; }
   .card .icon { font-size: clamp(24px, 4.4vh, 36px); line-height: 1; }
-  .card h2 { font-size: clamp(16px, 2.7vh, 20px); letter-spacing: 1px; }
+  .card h2 { font-size: clamp(16px, 2.7vh, 20px); letter-spacing: 1px; min-width: fit-content; }
   .card p {
     color: var(--text-dim);
     font-size: clamp(12.5px, 1.8vh, 13.5px);
@@ -91,9 +92,6 @@
   @media (max-width: 700px) {
     .grid { grid-template-columns: 1fr 1fr; }
     .card p { -webkit-line-clamp: 3; }
-    /* 窄卡不让徽章挤压标题：标题保持整行宽度，放不下时徽章换行到右侧 */
-    .card .top { flex-wrap: wrap; row-gap: 2px; }
-    .card h2 { min-width: fit-content; }
   }
   @media (max-width: 360px) {
     .grid { grid-template-columns: 1fr; }
@@ -109,55 +107,55 @@
 
     <main class="grid">
       <a class="card ready" href="/gomoku/">
-        <span class="top"><span class="icon">⚫</span><h2>五子棋</h2><span class="badge on">可开玩</span></span>
+        <div class="top"><span class="icon">⚫</span><h2>五子棋</h2><span class="badge on">可开玩</span></div>
         <p>人机三档棋力对战，也可创建房间联机双人对决，自带教练提示与复盘。</p>
         <span class="go">开始对局 →</span>
       </a>
 
       <a class="card ready" href="/poker/">
-        <span class="top"><span class="icon">🂡</span><h2>德州扑克</h2><span class="badge on">可开玩</span></span>
+        <div class="top"><span class="icon">🂡</span><h2>德州扑克</h2><span class="badge on">可开玩</span></div>
         <p>单机 AI、双人热座、联网房间 2~8 人同桌，蒙特卡洛胜率提示，绿绒牌桌等你上座。</p>
         <span class="go">上桌入座 →</span>
       </a>
 
       <a class="card ready" href="/guandan/">
-        <span class="top"><span class="icon">🃏</span><h2>掼蛋</h2><span class="badge on">可开玩</span></span>
+        <div class="top"><span class="icon">🃏</span><h2>掼蛋</h2><span class="badge on">可开玩</span></div>
         <p>4 人两队对家为友，两副牌逢人配，顺子炸弹同花顺，先打过 A 获胜。</p>
         <span class="go">开局组队 →</span>
       </a>
 
       <a class="card ready" href="/chess/">
-        <span class="top"><span class="icon">♟</span><h2>中国象棋</h2><span class="badge on">可开玩</span></span>
+        <div class="top"><span class="icon">♟</span><h2>中国象棋</h2><span class="badge on">可开玩</span></div>
         <p>楚河汉界三档 AI，马走日象走田，绝杀困毙判负，支持悔棋。</p>
         <span class="go">摆开阵势 →</span>
       </a>
 
       <a class="card ready" href="/doudizhu/">
-        <span class="top"><span class="icon">🎴</span><h2>斗地主</h2><span class="badge on">可开玩</span></span>
+        <div class="top"><span class="icon">🎴</span><h2>斗地主</h2><span class="badge on">可开玩</span></div>
         <p>1 打 2 叫分抢地主，顺子连对飞机炸弹，先出完的阵营获胜。</p>
         <span class="go">抢地主 →</span>
       </a>
 
       <a class="card ready" href="/mahjong/">
-        <span class="top"><span class="icon">🀄</span><h2>麻将</h2><span class="badge on">可开玩</span></span>
+        <div class="top"><span class="icon">🀄</span><h2>麻将</h2><span class="badge on">可开玩</span></div>
         <p>万筒条 108 张，碰杠胡无吃，七对清一色碰碰胡，四人轮庄积分。</p>
         <span class="go">开局码牌 →</span>
       </a>
 
       <a class="card ready" href="/flight/">
-        <span class="top"><span class="icon">✈️</span><h2>飞行棋</h2><span class="badge on">可开玩</span></span>
+        <div class="top"><span class="icon">✈️</span><h2>飞行棋</h2><span class="badge on">可开玩</span></div>
         <p>掷 6 起飞跳 4 格打敌机，终点回弹，四色棋盘 1 打 3 AI。</p>
         <span class="go">起飞 →</span>
       </a>
 
       <a class="card ready" href="/dice/">
-        <span class="top"><span class="icon">🎲</span><h2>摇色子</h2><span class="badge on">可开玩</span></span>
+        <div class="top"><span class="icon">🎲</span><h2>摇色子</h2><span class="badge on">可开玩</span></div>
         <p>热座轮流摇比大小，对子翻倍，另有自由摇想摇就摇。</p>
         <span class="go">摇起来 →</span>
       </a>
 
       <a class="card ready" href="/rps/">
-        <span class="top"><span class="icon">✌️</span><h2>石头剪刀布</h2><span class="badge on">可开玩</span></span>
+        <div class="top"><span class="icon">✌️</span><h2>石头剪刀布</h2><span class="badge on">可开玩</span></div>
         <p>人机或双人热座，AI 会记牌分析你的习惯，三局两胜见真章。</p>
         <span class="go">出手 →</span>
       </a>

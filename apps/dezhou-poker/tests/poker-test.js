@@ -9,7 +9,7 @@ const path = require('path');
 const vm = require('vm');
 
 const root = path.join(__dirname, '..');
-const src = ['../../public/poker/js/poker-core.js', '../../public/poker/js/poker-ai.js', '../../public/poker/js/poker-game.js']
+const src = ['../../public/poker/js/poker-core.js', '../../public/poker/js/poker-ai.js', '../../public/poker/js/equity.js', '../../public/poker/js/poker-game.js']
   .map(f => fs.readFileSync(path.join(root, f), 'utf8'))
   .join('\n');
 
@@ -139,6 +139,94 @@ console.log('[2] 蒙特卡洛胜率 estimateEquity');
   // 皇家同花顺已成形 → 胜率恒等于 1
   const e4 = eq(cards('As Ks'), cards('Qs Js Ts 2h 3h'), 2, 3000);
   assert(e4 === 1, '已成皇家同花顺胜率应为 1，实际 ' + e4);
+}
+
+/* ---------- 2b. 精确胜率 equityExact ---------- */
+console.log('[2b] 精确胜率 equityExact');
+{
+  const eqExact = vm.runInContext('equityExact', ctx);
+
+  // 守卫：仅单挑且转牌/河牌可枚举
+  assert(eqExact(cards('As Ks'), [], 1) === null, '翻牌前应返回 null');
+  assert(eqExact(cards('As Ks'), cards('Qs Js Ts'), 1) === null, '翻牌圈应返回 null');
+  assert(eqExact(cards('As Ks'), cards('Qs Js Ts 2h 3d'), 2) === null, '多人局应返回 null');
+
+  // 河牌：已成皇家 → 精确 1
+  const r1 = eqExact(cards('As Ks'), cards('Qs Js Ts 2h 3d'), 1);
+  assert(r1 && r1.equity === 1, '河牌皇家精确胜率应为 1');
+  assert(r1.total === 990, '河牌应枚举 C(45,2)=990 组，实际 ' + r1.total);
+
+  // 河牌闭式解：公共牌四条 7 + 我 A 大踢脚（我持有 Ah，剩余 A 有 3 张）。
+  // 对手无 A（C(42,2)=861 组）我全胜；对手含 A（129 组）同为 7777A 平分
+  const r2 = eqExact(cards('Ah Kd'), cards('7h 7d 7c 7s 2c'), 1);
+  const closed = (861 + 129 * 0.5) / 990;
+  assert(Math.abs(r2.equity - closed) < 1e-9,
+    `公共牌四条闭式解应为 ${closed.toFixed(6)}，实际 ${r2.equity.toFixed(6)}`);
+
+  // 转牌：皇家已在转牌成形（任意河牌不变）→ 精确 1
+  const t1 = eqExact(cards('As Ks'), cards('Qs Js Ts 2h'), 1);
+  assert(t1 && t1.equity === 1, '转牌已成皇家精确胜率应为 1');
+  assert(t1.total === 46 * 990, '转牌应枚举 46×C(45,2)=45540 组，实际 ' + t1.total);
+
+  // 转牌精确值与蒙特卡洛一致性（3 万次采样，容差 2 个百分点）
+  const eqMC = vm.runInContext('estimateEquity', ctx);
+  const holeMid = cards('7h 7d'), boardMid = cards('9s Kc 4d 2h');
+  const exactMid = eqExact(holeMid, boardMid, 1).equity;
+  const mcMid = eqMC(holeMid, boardMid, 1, 30000);
+  assert(Math.abs(exactMid - mcMid) < 0.02,
+    `转牌精确 ${exactMid.toFixed(4)} 与蒙特卡洛 ${mcMid.toFixed(4)} 应在 0.02 内一致`);
+
+  // 确定性：同一局面两次调用完全一致
+  const d1 = eqExact(holeMid, boardMid, 1), d2 = eqExact(holeMid, boardMid, 1);
+  assert(JSON.stringify(d1) === JSON.stringify(d2), '精确枚举应为确定性');
+}
+
+/* ---------- 2c. 建议行动 suggestAction（确定性提示） ---------- */
+console.log('[2c] 建议行动 suggestAction');
+{
+  const suggest = vm.runInContext('suggestAction', ctx);
+  // 组装 river 单挑局面：hole/board 用字符串构造，其余参数直接注入
+  function setupHint(holeStr, boardStr, o) {
+    o = o || {};
+    vm.runInContext(`
+      G.players = [
+        Object.assign(newPlayer('你', true, 'X'), {
+          chips: ${o.myChips || 2000}, bet: 0, hole: ${JSON.stringify(cards(holeStr))}, inHand: true }),
+        Object.assign(newPlayer('AI', false, 'Y'), {
+          chips: ${o.aiChips || 2000}, bet: ${o.aiBet || 0}, hole: [3, 4], inHand: true,
+          difficulty: 'hard', persona: makePersona('hard'), stats: { hands: 10, folds: 3, calls: 5, raises: 2 } })
+      ];
+      G.board = ${JSON.stringify(cards(boardStr))};
+      G.street = 'river'; G.pot = ${o.pot}; G.currentBet = ${o.currentBet};
+      G.bb = 20; G.sb = 10; G.dealerIdx = 0; G.turnIdx = 0; G.difficulty = 'hard';
+      G.raisesThisStreet = ${o.raises || 0}; G.raisesThisHand = 1; G.lastRaise = 20;
+      G.lastAggressor = ${o.currentBet > 0 ? 'G.players[1]' : 'null'};
+    `, ctx);
+    return vm.runInContext('G.players[0]', ctx);
+  }
+
+  // 河牌成皇家、无人下注 → 建议价值下注（确定性）
+  const me1 = setupHint('As Ks', 'Qs Js Ts 2h 3d', { pot: 1000, currentBet: 0 });
+  const s1 = suggest(me1);
+  assert(s1.type === 'raise' && s1.to > 0, '皇家无下注应建议下注，实际 ' + JSON.stringify(s1));
+  // 原玩家属性不被污染
+  assert(me1.persona === null, '提示后 persona 应回复原值');
+  assert(me1.chips === 2000 && me1.bet === 0, '提示不应改变筹码/下注');
+
+  // 空气牌面对底池下注 → 建议弃牌
+  const me2 = setupHint('2c 3d', '9h Kd 7s 4c Qd', { pot: 1000, currentBet: 600 });
+  const s2 = suggest(me2);
+  assert(s2.type === 'fold', '空气牌面对大注应建议弃牌，实际 ' + JSON.stringify(s2));
+
+  // 皇家但对方全下、我筹码刚好只能跟 → 建议跟注（无再加注空间）
+  const me3 = setupHint('As Ks', 'Qs Js Ts 2h 3d', { pot: 1000, currentBet: 500, aiChips: 500, aiBet: 500, myChips: 500 });
+  const s3 = suggest(me3);
+  assert(s3.type === 'call', '可全赢的皇家面对全下应建议跟注，实际 ' + JSON.stringify(s3));
+
+  // 确定性：同局面两次建议完全一致
+  const me4 = setupHint('7h 7d', '9s Kc 4d 2h Qc', { pot: 800, currentBet: 0 });
+  const s4a = JSON.stringify(suggest(me4)), s4b = JSON.stringify(suggest(me4));
+  assert(s4a === s4b, '确定性提示两次调用应一致: ' + s4a + ' vs ' + s4b);
 }
 
 /* ---------- 3. 边池 ---------- */

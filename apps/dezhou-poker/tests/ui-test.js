@@ -36,6 +36,7 @@ const load = (f) => window.eval(
 try {
   load('../../public/poker/js/poker-core.js');
   load('../../public/poker/js/poker-ai.js');
+  load('../../public/poker/js/equity.js');
   load('../../public/poker/js/poker-game.js');
   load('../../public/poker/js/poker-ui.js');
   load('../../public/poker/js/main.js');

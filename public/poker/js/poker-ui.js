@@ -256,7 +256,7 @@ function updateEquityBadge() {
   }
 }
 
-let eqMemoKey = ''; // 胜率计算的输入指纹（手牌|公共牌|对手数|跟注额|街）
+let eqMemoKey = ''; // 胜率计算的输入指纹（手牌|公共牌|对手数|跟注额|街|底池）
 
 function computeHumanEquity(p) {
   const badge = $('equityBadge');
@@ -265,13 +265,22 @@ function computeHumanEquity(p) {
   if (opps <= 0) { badge.textContent = ''; eqMemoKey = ''; return; }
   const toCall = Math.max(0, G.currentBet - p.bet);
   // 输入不变时跳过重算：联网模式每次广播都会触发渲染，蒙特卡洛不能白跑
-  const key = [p.hole.join(','), G.board.join(','), opps, toCall, G.street].join('|');
+  const key = [p.hole.join(','), G.board.join(','), opps, toCall, G.street, G.pot].join('|');
   if (key === eqMemoKey && badge.textContent) return;
   eqMemoKey = key;
-  const eq = estimateEquity(p.hole, G.board, opps, 2200);
+  const hint = equityHint(p);
   let extra = '';
-  if (toCall > 0) extra = ' ｜ 跟注需 ' + (toCall / (G.pot + toCall) * 100).toFixed(0) + '%';
-  badge.textContent = `我的胜率 ≈ ${Math.round(eq * 100)}%${extra}`;
+  if (hint.toCall > 0) extra = ' ｜ 跟注需 ' + (hint.toCall / (G.pot + hint.toCall) * 100).toFixed(0) + '%';
+  badge.textContent = `我的胜率 ≈ ${Math.round(hint.eq * 100)}%${hint.exact ? '(精确)' : ''}${extra} ｜ 建议：${equitySugLabel(hint.sug)}`;
+}
+
+/* 建议行动的展示文案（sug 为 aiDecideCore 的返回值） */
+function equitySugLabel(sug) {
+  if (!sug) return '—';
+  if (sug.type === 'fold') return '弃牌';
+  if (sug.type === 'check') return '过牌';
+  if (sug.type === 'call') return '跟注';
+  return (G.currentBet > 0 ? '加注到 ' : '下注 ') + fmt(Math.round(sug.to || 0));
 }
 
 /* ---------- 换手隐私屏（本地双人） ---------- */

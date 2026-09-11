@@ -99,7 +99,7 @@ function bootPage(name) {
   window.confirm = () => true;
   window.WebSocket = makeFakeWS();
   const SHARED = ['G', 'UI', 'NET', 'DIFF_CFG', 'SUIT_CHARS', 'SUIT_IS_RED', 'RANK_STR'];
-  ['../../public/poker/js/poker-core.js', '../../public/poker/js/poker-ai.js', '../../public/poker/js/poker-game.js', '../../public/poker/js/poker-ui.js', '../../public/poker/js/main.js'].forEach(f => {
+  ['../../public/poker/js/poker-core.js', '../../public/poker/js/poker-ai.js', '../../public/poker/js/equity.js', '../../public/poker/js/poker-game.js', '../../public/poker/js/poker-ui.js', '../../public/poker/js/main.js'].forEach(f => {
     window.eval(
       fs.readFileSync(path.join(root, f), 'utf8')
         .replace(/^'use strict';/, '')

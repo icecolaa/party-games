@@ -7,6 +7,7 @@
  *   · 对手激进度 / 跟注站倾向（对手建模）
  *   · 自身风格（进攻性、紧凶度、诈唬频率）
  * 做出 弃牌/过牌/跟注/加注/全下 决策。
+ * aiDecideCore(p, det)：det 为确定性模式（equity.js 提示用），正常对战恒不传。
  * ============================================================ */
 
 const DIFF_CFG = {
@@ -36,12 +37,13 @@ function makePersona(diff) {
 
 function clampEq(x) { return Math.max(0.02, Math.min(0.99, x)); }
 
-/* 对手下注带来的威胁修正：本街加注越多越危险；对手被动则少忌惮 */
+/* 对手下注带来的威胁修正：本街加注越多越危险；对手被动则少忌惮
+ * stats 为本地局的可选字段（联网广播不含），缺失时该项建模退化为 0 */
 function calcThreat(p) {
   let t = 0;
   if (G.raisesThisStreet > 0) t += 0.035 * Math.min(3, G.raisesThisStreet);
   const la = G.lastAggressor;
-  if (la && la !== p && la.inHand) {
+  if (la && la !== p && la.inHand && la.stats) {
     const s = la.stats;
     const ar = s.raises / Math.max(1, s.hands);
     if (ar > 0.8) t += 0.03;
@@ -52,7 +54,7 @@ function calcThreat(p) {
 
 /* 场上“跟注站”（几乎不弃牌的对手）比例：诈唬价值下降、价值下注可更薄 */
 function stationFactor(p) {
-  const others = G.players.filter(x => x.inHand && x !== p && !x.isHuman && x.stats.hands >= 4);
+  const others = G.players.filter(x => x.inHand && x !== p && !x.isHuman && x.stats && x.stats.hands >= 4);
   if (!others.length) return 0;
   let sticky = 0;
   others.forEach(o => {
@@ -82,7 +84,9 @@ function aiDecide(p) {
   return decision;
 }
 
-function aiDecideCore(p) {
+/* det=true：确定性模式（胜率提示用）——r 恒 0 使价值门全开、诈唬门关闭
+ * （配合 persona.bluff=0），下注量取公式下限，输出仅由局面决定 */
+function aiDecideCore(p, det) {
   const diff = normalizeDifficulty(p.difficulty || G.difficulty);
   const cfg = DIFF_CFG[diff];
   const opps = G.players.filter(x => x.inHand && x !== p).length;
@@ -91,7 +95,7 @@ function aiDecideCore(p) {
   eq = clampEq(eq + (Math.random() - 0.5) * cfg.noise); // 低难度引入判断噪声
 
   // 大师绝技：翻牌/转牌用超强牌慢打设陷阱（河牌不再慢打，避免损失价值）
-  const slowplay = diff === 'master' && eq > 0.90 && G.street !== 'river' && Math.random() < 0.25;
+  const slowplay = !det && diff === 'master' && eq > 0.90 && G.street !== 'river' && Math.random() < 0.25;
 
   const toCall = Math.min(Math.max(0, G.currentBet - p.bet), p.chips);
   const pot = G.pot;
@@ -100,7 +104,7 @@ function aiDecideCore(p) {
   const headsUp = opps === 1;
   const fair = 1 / (opps + 1);           // 随机牌的平均份额
   const persona = p.persona;
-  const r = Math.random();
+  const r = det ? 0 : Math.random();
   const threat = calcThreat(p);
   const station = stationFactor(p);
   const posB = positionBoost(p);
@@ -114,14 +118,14 @@ function aiDecideCore(p) {
       // 大盲位选项：过牌或反加
       const openMult = (headsUp ? 1.12 : 1.85) - (persona.tight - 1) * 0.35 - posB;
       if (canRaise && eff > fair * openMult && r < 0.75 * persona.aggro) {
-        return act(G.bb * (2.5 + Math.random() * 1.2) + G.bb * 0.5 * Math.min(3, opps));
+        return act(G.bb * (2.5 + (det ? 0 : Math.random()) * 1.2) + G.bb * 0.5 * Math.min(3, opps));
       }
       return { type: 'check' };
     }
     const floorMult = headsUp ? 0.8 : (1.55 - (persona.tight - 1) * 0.25);
     const req = Math.max(potOdds - (headsUp ? 0.05 : 0), fair * floorMult);
     if (canRaise && eff > fair * (headsUp ? 1.25 : 2.05) && G.raisesThisStreet < 3 && r < 0.8 * persona.aggro) {
-      return act(G.currentBet * (2.6 + Math.random() * 0.8) + G.bb * 0.4); // 3-bet
+      return act(G.currentBet * (2.6 + (det ? 0 : Math.random()) * 0.8) + G.bb * 0.4); // 3-bet
     }
     if (eff > req) return { type: 'call' };
     if (toCall <= G.bb && eff > req - 0.07 && r < 0.55) return { type: 'call' }; // 便宜的防守
@@ -142,7 +146,7 @@ function aiDecideCore(p) {
   if (toCall <= 0) {
     // 无人下注：价值下注 / 半诈唬 / 纯诈唬 / 过牌
     if (canRaise && eff > valueTh && r < 0.85 * persona.aggro) {
-      return act(pot * (0.55 + 0.45 * Math.random()) * (eff > 0.85 ? 1.25 : 1));
+      return act(pot * (0.55 + (det ? 0 : Math.random()) * 0.45) * (eff > 0.85 ? 1.25 : 1));
     }
     if (canRaise && eff > 0.40 && G.street !== 'river' &&
         r < persona.bluff * (G.street === 'flop' ? 0.40 : 0.24) * (1 - 0.5 * station)) {
@@ -159,7 +163,7 @@ function aiDecideCore(p) {
   const req = potOdds + 0.02 + (G.raisesThisStreet > 0 ? 0.015 * G.raisesThisStreet : 0)
     - (cfg.blunder > 0.05 ? 0.015 : 0);
   if (eff >= 0.85 && canRaise && r < 0.9 * persona.aggro) {
-    const shove = eff > 0.92 && (G.street === 'turn' || G.street === 'river') && Math.random() < 0.5;
+    const shove = eff > 0.92 && (G.street === 'turn' || G.street === 'river') && (det ? false : Math.random() < 0.5);
     return act(shove ? p.bet + p.chips : G.currentBet + (pot + toCall) * 0.8);
   }
   if (eff >= valueTh && canRaise && G.raisesThisStreet < 2 && r < 0.5 * persona.aggro) {

@@ -29,7 +29,7 @@ const load = f => window.eval(
     .replace(/^'use strict';/, '')
     .replace(new RegExp('\\bconst\\s+(' + SHARED.join('|') + ')\\b', 'g'), 'var $1')
 );
-['../../public/poker/js/poker-core.js', '../../public/poker/js/poker-ai.js', '../../public/poker/js/poker-game.js', '../../public/poker/js/poker-ui.js', '../../public/poker/js/main.js'].forEach(load);
+['../../public/poker/js/poker-core.js', '../../public/poker/js/poker-ai.js', '../../public/poker/js/equity.js', '../../public/poker/js/poker-game.js', '../../public/poker/js/poker-ui.js', '../../public/poker/js/main.js'].forEach(load);
 
 document.dispatchEvent(new window.Event('DOMContentLoaded', { bubbles: true }));
 

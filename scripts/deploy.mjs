@@ -47,7 +47,7 @@ const excludes = [
   '--exclude=package-lock.json',
   ...SUB_PKG.map((s) => `--exclude=apps/${s}/package.json`),
 ];
-const items = ['.gitignore', 'LICENSE', 'README.md', 'apps', 'package.json', 'server.js', 'tests'];
+const items = ['.gitignore', 'LICENSE', 'README.md', 'apps', 'package.json', 'public', 'server.js', 'servers', 'tests'];
 if (fs.existsSync(path.join(ROOT, 'scripts'))) items.push('scripts');
 execSync(`tar --force-local -C "${ROOT}" -czf "${tarball}" ${excludes.join(' ')} ${items.join(' ')}`, { stdio: 'inherit' });
 const size = (fs.statSync(tarball).size / 1024).toFixed(1);

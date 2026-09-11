@@ -206,6 +206,7 @@
       <div class="card" id="coach-card">
         <div class="coach-head">
           <span class="coach-title">🎓 教练</span>
+          <button id="engine-hint" class="mini-ghost" title="服务端强引擎（如 rapfi）给出着法建议；未接入时回落本地 AI">💡 引擎提示</button>
           <button id="coach-toggle" class="mini-ghost">提示：开</button>
         </div>
         <div id="coach-log"></div>
@@ -298,7 +299,7 @@
     board: G.createBoard(), history: [],
     human: BLACK, ai: WHITE, turn: BLACK,
     over: false, thinking: false, winCells: null,
-    hover: null, lastMove: null, token: 0
+    hover: null, lastMove: null, engineHint: null, token: 0
   };
 
   var scores = { h: 0, a: 0, d: 0 };
@@ -392,6 +393,19 @@
         var p = S.board[G.idx(x, y)];
         if (p) drawStone(x, y, p, 1);
       }
+    }
+
+    // 引擎提示标记（金色虚线圈）
+    if (S.engineHint && !S.over && !S.winCells &&
+        S.board[G.idx(S.engineHint.x, S.engineHint.y)] === EMPTY) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(240,180,41,.95)';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.arc(PAD + S.engineHint.x * CELL, PAD + S.engineHint.y * CELL, 18, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
     }
 
     if (S.lastMove && !S.winCells) {
@@ -806,6 +820,44 @@
       return '<div class="coach-item' + (i === 0 ? ' latest' : '') + (it.cls ? ' ' + it.cls : '') + '">' + it.msg + '</div>';
     }).join('');
   }
+  /* 引擎提示：请求服务端强引擎（rapfi，piskvork 协议）给一手建议；
+   * 未接入（501）时回落本地 AI 的最佳着法，文案说明来源。 */
+  $('engine-hint').addEventListener('click', function () {
+    if (mode !== 'ai') { toast('引擎提示仅人机对战可用'); return; }
+    if (S.over || S.thinking || S.turn !== S.human) return;
+    var btn = $('engine-hint');
+    btn.disabled = true;
+    var moves = S.history.map(function (m) { return { x: m.x, y: m.y, c: m.p }; });
+    fetch('/gomoku/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ moves: moves, timeMs: 1500 })
+    }).then(function (r) {
+      if (!r.ok) throw new Error('engine_' + r.status);
+      return r.json();
+    }).then(function (j) {
+      btn.disabled = false;
+      var mv = j && j.move;
+      if (mv && S.board[G.idx(mv.x, mv.y)] === EMPTY && !S.over) {
+        S.engineHint = mv;
+        coachLog('💡 引擎建议落子 ' + coordName(mv.x, mv.y) + '（金色虚线圈）', 'good');
+        render();
+      } else {
+        coachLog('💡 引擎未给出建议，参考本地教练提示即可。', 'warn');
+      }
+    }).catch(function (e) {
+      btn.disabled = false;
+      var local = G.bestMove(S.board, S.human, 'hard');
+      if (local) {
+        S.engineHint = { x: local.x, y: local.y };
+        coachLog('💡 引擎未接入（' + e.message + '），已用本地 AI 建议 ' + coordName(local.x, local.y), 'warn');
+        render();
+      } else {
+        coachLog('💡 引擎未接入（' + e.message + '）。', 'warn');
+      }
+    });
+  });
+
   $('coach-toggle').addEventListener('click', function () {
     coachEnabled = !coachEnabled;
     try { localStorage.setItem('gomoku_coach', coachEnabled ? '1' : '0'); } catch (e) {}
@@ -918,6 +970,7 @@
 
   function doMove(x, y, p) {
     hideConfirmBar();
+    S.engineHint = null;
     if (mode === 'online') { onlineMove(x, y); return; }
     var preMyWins = coachEnabled ? coachFivePoints(S.board, p) : [];
     var preOppWins = coachEnabled ? coachFivePoints(S.board, G.other(p)) : [];
@@ -999,7 +1052,7 @@
     S.board = G.createBoard();
     S.history = [];
     S.over = false; S.thinking = false; S.winCells = null;
-    S.lastMove = null; S.hover = null;
+    S.lastMove = null; S.hover = null; S.engineHint = null;
     S.turn = BLACK;
     bannerEl.classList.add('hidden');
     overAnnouncedVersion = -1;

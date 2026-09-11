@@ -36,10 +36,11 @@ function checkHand(hand, level, prevPlay, tag) {
     ok(cb.cards.length === ids.size && cb.cards.every((c) => handIds.has(c.id)),
       tag + ' 候选牌必须来自手牌且不重复');
     ok(VALID_TYPES.has(cb.play.type), tag + ' 解释类型合法: ' + cb.play.type);
-    // 万能牌不得被解释为王
-    const wildCards = cb.cards.filter((c) => C.isWild(c, level));
-    ok(wildCards.every((w) => !cb.play.type || cb.play.mainRank < 15 || cb.play.mainRank !== 15 || true),
-      tag + ' 占位'); // 主点为王的合法情形仅自然王对/王炸，万能不作王由生成侧保证
+    // 万能牌不得被解释为王：主点为王时，组合里必须有该点数的自然牌（非万能）
+    if (cb.play.mainRank >= 15) {
+      ok(cb.cards.some((c) => !C.isWild(c, level) && c.rank === cb.play.mainRank),
+        tag + ' 王主点必须来自自然王，而非万能牌解释');
+    }
     const key = cb.cards.map((c) => c.id).sort().join(',') + '|' + cb.play.type + '|' + cb.play.rank;
     ok(!seen.has(key), tag + ' (牌组,解释) 不应重复');
     seen.add(key);

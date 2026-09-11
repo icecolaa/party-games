@@ -43,7 +43,8 @@ tests/           smoke.js（34 项路由冒烟，含 /nav.js）+ rules-modal-tes
 
 ```bash
 npm start                  # 本地 http://127.0.0.1:8600/（PORT 可改）
-npm test                   # 全量 22 套件约 1500 项断言（当前全绿）
+npm test                   # 全量约 1500 项断言（当前全绿；Git Bash 下 npm 子进程可能找不到 node，直接用 node 跑）
+git push                   # 双远程同步：Gitee（origin fetch/主）+ GitHub icecolaa/party-games（镜像）
 npm run deploy             # PocketBay 一键部署（读 ~/.pocketbay 凭证，零确认）
 ```
 
@@ -66,6 +67,8 @@ npm run deploy             # PocketBay 一键部署（读 ~/.pocketbay 凭证，
 3. ~~验收报告 v2 回填~~：已完成（2026-09-11，`验收报告-v2.md` §6 已回填线上验证结论）。
 4. ~~本机 8600 端口旧进程~~：2026-09-11 检查无监听，无需处理。
 5. 小事：本机 Git Bash 里 `npm test`/`npm run xxx` 子进程可能找不到 node（PATH 问题），直接把 package.json 里的命令用 `node` 逐个执行即可；另有 Git Bash 会把 `</div>` 这类参数当路径转换的坑，统计标签用字符类 `[<]/div` 或 node。
+
+6. **GitHub 镜像（2026-09-12 配置）**：origin 配了双 pushurl（Gitee + GitHub `icecolaa/party-games`），`git push` 一条命令两边同时更新；fetch 仅走 Gitee。GitHub 推送凭证走本地 credential helper（`credential.https://github.com.helper`，实时读环境变量 `GITHUB_TOKEN`，令牌未写入 .git/config）。若 GitHub 推送 403，检查令牌的 Repository access（需 All repositories + Contents 写权限）。
 
 ## 六、验收状态（v2 报告结论）
 

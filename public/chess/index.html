@@ -14,7 +14,10 @@ header h1 { font-size:18px; letter-spacing:2px; }
 header .status { margin-left:auto; font-size:13px; font-weight:700; }
 header .status.check { color:var(--lose); }
 .board-wrap { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:10px; }
-#board { position:relative; width:100%; aspect-ratio:9/10; background:linear-gradient(160deg, var(--wood), var(--wood-dark)); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.5); }
+#board { position:relative; width:100%; aspect-ratio:9/10; border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.5);
+  /* 棋盘线 SVG：viewBox 90×100，交点 (5+10i, 5+10j) 与格子中心（棋子圆心）对齐；
+     竖线 1..7 列在楚河汉界处断开，两侧九宫补斜线 */
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 100'%3E%3Cg stroke='%237a5a30' stroke-width='0.6' fill='none'%3E%3Cpath d='M5 15H85 M5 25H85 M5 35H85 M5 45H85 M5 55H85 M5 65H85 M5 75H85 M5 85H85'/%3E%3Cpath d='M5 5H85 M5 95H85' stroke-width='1.1'/%3E%3Cpath d='M5 5V95 M85 5V95' stroke-width='1.1'/%3E%3Cpath d='M15 5V45 M15 55V95 M25 5V45 M25 55V95 M35 5V45 M35 55V95 M45 5V45 M45 55V95 M55 5V45 M55 55V95 M65 5V45 M65 55V95 M75 5V45 M75 55V95'/%3E%3Cpath d='M35 5L55 25 M35 25L55 5 M35 75L55 95 M35 95L55 75'/%3E%3C/g%3E%3Ctext x='25' y='52.5' font-size='6.5' fill='%237a5a30' opacity='0.85' text-anchor='middle' font-family='KaiTi,STKaiti,serif'%3E楚 河%3C/text%3E%3Ctext x='65' y='52.5' font-size='6.5' fill='%237a5a30' opacity='0.85' text-anchor='middle' font-family='KaiTi,STKaiti,serif'%3E漢 界%3C/text%3E%3C/svg%3E"), linear-gradient(160deg, var(--wood), var(--wood-dark)); }
 .cell { position:absolute; width:calc(100%/9); height:calc(100%/10); display:flex; align-items:center; justify-content:center; cursor:pointer; }
 .cell .pt {
   width:82%; height:82%; border-radius:50%;
@@ -28,8 +31,7 @@ header .status.check { color:var(--lose); }
 .cell.sel .pt { box-shadow:0 0 0 3px var(--accent), 0 3px 6px rgba(0,0,0,.35); transform:scale(1.06); }
 .cell.last .pt { box-shadow:0 0 0 2px rgba(240,180,41,.65), 0 3px 6px rgba(0,0,0,.35); }
 .cell .dot { width:22%; height:22%; border-radius:50%; background:var(--accent); opacity:.85; box-shadow:0 0 0 3px rgba(240,180,41,.35); }
-.cell .ring { width:74%; height:74%; border-radius:50%; border:3px dashed var(--accent); opacity:.85; }
-.gridline { position:absolute; background:#7a5a30; }
+.cell.cap::after { content:""; position:absolute; inset:5%; border:3px dashed var(--accent); border-radius:50%; opacity:.9; pointer-events:none; }
 .bar { display:flex; gap:8px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px; }
 #msg { flex:1; font-size:13.5px; line-height:1.5; }
 button { font-family:inherit; cursor:pointer; }
@@ -151,9 +153,10 @@ input { width:100%; padding:11px 12px; border-radius:9px; background:var(--panel
         pt.className = 'pt ' + (C.isRed(p) ? 'r' : 'b');
         pt.textContent = C.PIECE_NAMES[p];
         cell.appendChild(pt);
+        if (legalTargets[i]) cell.classList.add('cap'); // 可吃：敌子格叠虚线圈提示
       } else if (legalTargets[i]) {
         var d = document.createElement('div');
-        d.className = C.isRed(st.board[S.sel]) || true ? 'ring' : 'dot';
+        d.className = 'dot';
         cell.appendChild(d);
       }
     }

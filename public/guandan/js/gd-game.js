@@ -108,10 +108,14 @@ const GuandanGame = (function () {
     const play = C.identify(cards, G.level);
     if (!play) return { ok: false, error: 'invalid_shape' };
 
-    // 跟牌校验：必须同型同长且更大，或炸弹
+    // 跟牌校验：必须同型同长且更大，或炸弹。
+    // identify 只给出牌力最优的一种解释；若该解释压不过，再查是否存在
+    // 其他合法解释能压（如 {7,7,K,K,万能} 既可作 777+KK 也可作 KKK+77）
     const prev = G.lastPlay;
     if (prev && prev.seat !== seat) {
-      if (!C.beats(play, prev.play)) return { ok: false, error: 'not_beating' };
+      if (!C.beats(play, prev.play) && !C.anyInterpretationBeats(cards, prev.play, G.level)) {
+        return { ok: false, error: 'not_beating' };
+      }
     }
 
     // 执行

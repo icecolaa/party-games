@@ -11,3 +11,7 @@ Desktop.ini
 # 部署产物
 *.zip
 *.tar.gz
+
+# 调研/差分工具本地产物
+tools/guandan-diff/vendor/
+tools/guandan-diff/results/

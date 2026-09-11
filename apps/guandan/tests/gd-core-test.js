@@ -162,6 +162,80 @@ section('— 候选生成 —');
   ok(first.length > 0, '首出有合法牌');
 }
 
+section('— 候选生成·差分回归（2026-09 对齐参考引擎 welkin03/guandan-ai） —');
+{
+  const lv = 5;
+
+  // 1) 同花顺候选：万能牌 + 同花自然牌必须能凑出同花顺（此前漏判）
+  {
+    const h = hand('h5 s6 s7 s8 s9'); // h5 为级牌红桃 = 万能
+    const sf = C.allCombos(h, lv).filter((c) => c.play.type === C.T.STRAIGHT_FLUSH);
+    ok(sf.length > 0, '万能+同花自然牌应生成同花顺候选');
+    ok(sf.some((c) => c.play.rank === 9), '同花顺 5-9（9 高）');
+  }
+  {
+    const h = hand('d2 d3 d4 d5 d6 c7'); // 纯自然同花顺
+    ok(C.allCombos(h, lv).some((c) => c.play.type === C.T.STRAIGHT_FLUSH && c.play.rank === 6),
+      '自然同花顺应进入候选');
+  }
+
+  // 2) A 低位回绕：A2233 三连对、AAA222 钢板（识别 + 生成 + 应手）
+  {
+    const tube = C.identify(hand('sA hA s2 h2 s3 h3'), lv);
+    ok(tube && tube.type === C.T.TUBE, 'A2233 应识别为三连对');
+    eq(tube && tube.mainRank, 3, 'A2233 记 3 高');
+    const plate = C.identify(hand('sA hA dA s2 h2 d2'), lv);
+    ok(plate && plate.type === C.T.PLATE, 'AAA222 应识别为钢板');
+    eq(plate && plate.mainRank, 2, 'AAA222 记 2 高');
+    ok(C.beats(C.identify(hand('s4 h4 s5 h5 s6 h6'), lv), tube), '三连对 445566 压 A2233');
+    ok(C.allCombos(hand('sA hA s2 h2 s3 h3'), lv).some((c) => c.play.type === C.T.TUBE),
+      'A2233 应进入候选');
+    ok(C.allCombos(hand('sA hA dA s2 h2 d2'), lv).some((c) => c.play.type === C.T.PLATE),
+      'AAA222 应进入候选');
+  }
+
+  // 3) 三带二万能替换变体：{2自然K+万能, 33} 可作 KKK+33
+  {
+    const fh = C.allCombos(hand('sK hK s3 h3 h5'), lv)
+      .filter((c) => c.play.type === C.T.FULL_HOUSE);
+    ok(fh.some((c) => c.play.mainRank === 13), 'KK+万能作三条应进入候选');
+  }
+  // 三条侧 1 自然 + 2 万能：{s6, 万能, 万能, s2 h2} → 666+22
+  {
+    const fh = C.allCombos(hand('s6 h5 h5 s2 h2'), lv) // h5 两副本 = 双万能
+      .filter((c) => c.play.type === C.T.FULL_HOUSE);
+    ok(fh.some((c) => c.play.mainRank === 6), '1 自然+2 万能作三条应进入候选');
+  }
+
+  // 4) 天王炸必须出现在候选中（此前生成器从未产出）
+  {
+    const h = hand('ws ws Ws Ws s5 h5');
+    ok(C.allCombos(h, lv).some((c) => c.play.type === C.T.ROCKET), '天王炸应进入候选');
+    const prev = C.identify(hand('s8 s8 s8 s8 h8'), lv);
+    const legal = C.legalPlays(h, prev, lv);
+    ok(legal.some((c) => c.play.type === C.T.ROCKET), '天王炸应能压八炸');
+  }
+
+  // 5) 多解释兜底 API：identify 最优解释之外的合法解释也应能通过应手判定
+  {
+    const sel = hand('s7 h7 sK hK h5'); // h5 万能：{7,7,K,K,万能}
+    const best = C.identify(sel, lv);   // 最优解释 = KKK+77（主点 K 幂次更高）
+    ok(best && best.type === C.T.FULL_HOUSE && best.mainRank === 13, '最优解释应为 KKK 带77');
+    const prev = C.identify(hand('s9 h9 d9 sQ hQ'), lv); // 999+QQ
+    ok(C.beats(best, prev), 'KKK+77 压过 999+QQ');
+    ok(C.anyInterpretationBeats(sel, prev, lv), '兜底判定应认可（存在可压解释）');
+    const bombPrev = C.identify(hand('s8 h8 d8 c8 s8'), lv); // 8 炸
+    ok(!C.anyInterpretationBeats(sel, bombPrev, lv), '任何解释都压不过同花顺级炸弹时兜底应为否');
+  }
+
+  // 6) 万能单张按级牌解释（仅次于王）
+  {
+    const solo = C.identify(hand('h5'), lv);
+    eq(solo && solo.mainRank, 5, '万能单张按级牌 5 解释');
+    ok(C.beats(solo, C.identify(hand('sA'), lv)), '万能单张(级牌)压单 A');
+  }
+}
+
 section('— 牌力与描述 —');
 {
   eq(C.playText(C.identify(hand('ws ws Ws Ws'), 2)), '天王炸', '天王炸描述');

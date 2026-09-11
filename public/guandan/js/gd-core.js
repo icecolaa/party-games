@@ -158,11 +158,17 @@ const GuandanCore = (function () {
     }
 
     if (n === 6) {
-      if (groups.length === 3 && counts.every((c) => c === 2) && isRun(groups)) {
-        return { type: T.TUBE, size: 6, rank: groups[2], mainRank: groups[2], cards };
+      // 三连对：连续三对；A 低位回绕窗口 A2233 记作 3 高（与生成侧一致）
+      if (groups.length === 3 && counts.every((c) => c === 2) &&
+          (isRun(groups) || (groups[0] === 2 && groups[1] === 3 && groups[2] === 14))) {
+        const r = isRun(groups) ? groups[2] : 3;
+        return { type: T.TUBE, size: 6, rank: r, mainRank: r, cards };
       }
-      if (groups.length === 2 && counts.every((c) => c === 3) && groups[1] === groups[0] + 1) {
-        return { type: T.PLATE, size: 6, rank: groups[1], mainRank: groups[1], cards };
+      // 钢板：连续两个三张；A 低位回绕窗口 AAA222 记作 2 高
+      if (groups.length === 2 && counts.every((c) => c === 3) &&
+          (groups[1] === groups[0] + 1 || (groups[0] === 2 && groups[1] === 14))) {
+        const r = (groups[0] === 2 && groups[1] === 14) ? 2 : groups[1];
+        return { type: T.PLATE, size: 6, rank: r, mainRank: r, cards };
       }
     }
 
@@ -250,90 +256,133 @@ const GuandanCore = (function () {
     const byRank = {};
     for (const c of normals) (byRank[c.rank] = byRank[c.rank] || []).push(c);
 
-    const push = (cards) => {
-      const p = identify(cards, level);
-      if (p) res.push({ play: p, cards });
-    };
+    /* 构造即带解释：同一组牌的不同解释都成为独立候选（如 77+KK+万能
+     * 既可作 777+KK 也可作 KKK+77，压制力不同，不能只留一种） */
+    const mk = (type, size, mainRank, cards) =>
+      res.push({ play: { type, size, rank: cardPower(mainRank, level), mainRank, cards }, cards });
+    const mkSeq = (type, size, high, cards) =>
+      res.push({ play: { type, size, rank: high, mainRank: high, cards }, cards });
+    const pushSeq = (type, high) => (cards) => mkSeq(type, cards.length, high, cards);
+    const pushFH = (triple, pairCards, tr) => mk(T.FULL_HOUSE, 5, tr, triple.concat(pairCards));
+
     const take = (rank, k) => (byRank[rank] || []).slice(0, k);
     const needWild = (rank, k) => Math.max(0, k - (byRank[rank] || []).length);
 
-    // 单张
-    for (const c of hand) push([c]);
-    // 对子/三张/炸弹（同点数，万能牌补足）
+    // 单张（万能单张按级牌解释，仅次于王）
+    for (const c of hand) mk(T.SINGLE, 1, isWild(c, level) ? level : c.rank, [c]);
+
+    // 对子/三张/炸弹（同点数，万能牌补足；王不可由万能牌代替）
+    const groupType = (k) => (k === 2 ? T.PAIR : k === 3 ? T.TRIPLE : T.BOMB);
     for (const r of Object.keys(byRank).map(Number)) {
       const have = byRank[r].length;
-      for (let k = 2; k <= Math.min(8, have + wilds.length); k++) {
+      const maxK = r >= SMALL_JOKER ? have : have + wilds.length;
+      for (let k = 2; k <= maxK; k++) {
         const need = needWild(r, k);
         if (need > wilds.length) continue;
-        push(take(r, Math.min(k, have)).concat(wilds.slice(0, need)));
+        mk(groupType(k), k, r, take(r, Math.min(k, have)).concat(wilds.slice(0, need)));
       }
     }
-    // 纯万能牌组合（如两张红桃级牌作对子）
-    if (wilds.length >= 2) push(wilds.slice(0, 2));
-    if (wilds.length >= 3) push(wilds.slice(0, 3));
+    // 纯万能牌组合（两张红桃级牌作对子、三张作三条，均为级牌）
+    if (wilds.length >= 2) mk(T.PAIR, 2, level, wilds.slice(0, 2));
+    if (wilds.length >= 3) mk(T.TRIPLE, 3, level, wilds.slice(0, 3));
+    // 天王炸：双王各二
+    if ((byRank[SMALL_JOKER] || []).length >= 2 && (byRank[BIG_JOKER] || []).length >= 2) {
+      mk(T.ROCKET, 4, BIG_JOKER, take(SMALL_JOKER, 2).concat(take(BIG_JOKER, 2)));
+    }
 
-    // 顺子（5 张连续）
-    for (let start = 2; start <= 10; start++) trySeq(start, 1, 5, push, byRank, wilds);
-    tryWheel(push, byRank, wilds);
+    // 顺子（5 张连续，含 A2345 轮子；同花副本变体 → 同花顺候选）
+    for (let start = 2; start <= 10; start++) {
+      const ranks = seqRanks(start, 1);
+      tryRanks(ranks, 1, pushSeq(T.STRAIGHT, ranks[4]), byRank, wilds);
+      for (let s = 0; s < 4; s++) tryRanks(ranks, 1, pushSeq(T.STRAIGHT_FLUSH, ranks[4]), byRank, wilds, s);
+    }
+    tryRanks([14, 2, 3, 4, 5], 1, pushSeq(T.STRAIGHT, 5), byRank, wilds);
+    for (let s = 0; s < 4; s++) tryRanks([14, 2, 3, 4, 5], 1, pushSeq(T.STRAIGHT_FLUSH, 5), byRank, wilds, s);
 
-    // 三连对（6 张，3 个连续对子）
-    for (let start = 2; start <= 12; start++) trySeq(start, 2, 6, push, byRank, wilds);
-    // 钢板（6 张，2 个连续三张）
-    for (let start = 2; start <= 13; start++) trySeq(start, 3, 6, push, byRank, wilds);
+    // 三连对（6 张，3 个连续对子；含 A 低位回绕 A2233 记 3 高）
+    for (let start = 2; start <= 12; start++) {
+      tryRanks(seqRanks(start, 2), 2, pushSeq(T.TUBE, start + 2), byRank, wilds);
+    }
+    tryRanks([14, 2, 3], 2, pushSeq(T.TUBE, 3), byRank, wilds);
+    // 钢板（6 张，2 个连续三张；含 A 低位回绕 AAA222 记 2 高）
+    for (let start = 2; start <= 13; start++) {
+      tryRanks(seqRanks(start, 3), 3, pushSeq(T.PLATE, start + 1), byRank, wilds);
+    }
+    tryRanks([14, 2], 3, pushSeq(T.PLATE, 2), byRank, wilds);
 
-    // 三带二
+    // 三带二（三条侧不可含王；对子侧可取王对，万能只补自然牌）。
+    // 两侧都在「必须补足」之外枚举万能替换变体：如手里有 3 张自然 K，
+    // 「KK+万能作K」当三条配 33 也是合法解释（压制力与纯 KKK 相同，但牌组不同）
     for (const tr of Object.keys(byRank).map(Number)) {
-      if (byRank[tr].length + wilds.length < 3) continue;
+      if (tr >= SMALL_JOKER) continue;
+      const nt = byRank[tr].length;
+      if (nt + wilds.length < 3) continue;
       const needT = needWild(tr, 3);
-      if (needT > wilds.length) continue;
-      const triple = take(tr, 3).concat(wilds.slice(0, needT));
-      const leftWild = wilds.length - needT;
-      for (const pr of Object.keys(byRank).map(Number)) {
-        if (pr === tr) continue;
-        const needP = Math.max(0, 2 - byRank[pr].length);
-        if (needP > leftWild) continue;
-        push(triple.concat(take(pr, 2), wilds.slice(needT, needT + needP)));
+      for (let wt = needT; wt <= Math.min(3, needT + nt); wt++) {
+        if (wt > wilds.length) break;
+        const tCards = take(tr, 3 - wt).concat(wilds.slice(0, wt));
+        for (const pr of Object.keys(byRank).map(Number)) {
+          if (pr === tr) continue;
+          const np = byRank[pr].length;
+          if (pr >= SMALL_JOKER) {
+            if (np >= 2) pushFH(tCards, take(pr, 2), tr);
+            continue;
+          }
+          const needP = Math.max(0, 2 - np);
+          for (let wp = needP; wp <= Math.min(2, needP + np); wp++) {
+            if (wt + wp > wilds.length) break;
+            pushFH(tCards, take(pr, 2 - wp).concat(wilds.slice(wt, wt + wp)), tr);
+          }
+        }
       }
     }
-    return res;
+
+    // 全局去重：不同枚举路径可能产出完全等价的候选（如纯万能对子配不同点数标签）
+    const seen = new Set();
+    return res.filter((c) => {
+      const key = c.cards.map((x) => x.id).sort().join(',') + '|' + c.play.type + '|' + c.play.rank;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }
 
-  /* 连续段生成：每级取 per 张，共 total 张；缺牌用万能牌补 */
-  function trySeq(start, per, total, push, byRank, wilds) {
+  /* 连续段生成：按 ranks 逐级取 per 张；缺牌用万能牌补。
+   * suit 为空取普通副本；指定花色时取「全同花副本」变体（同花顺候选，
+   * 否则 AI/提示将无法打出或应手同花顺）。push 收到确定的一组牌。 */
+  function tryRanks(ranks, per, push, byRank, wilds, suit) {
     const cards = [];
     let used = 0;
-    const levels = per === 1 ? 5 : (per === 2 ? 3 : 2);
-    for (let i = 0; i < levels; i++) {
-      const r = start + i;
-      if (r > 14) return;
+    for (const r of ranks) {
       const pool = byRank[r] || [];
-      const takeN = Math.min(per, pool.length);
-      for (let k = 0; k < takeN; k++) cards.push(pool[k]);
-      used += per - takeN;
+      if (suit == null) {
+        const takeN = Math.min(per, pool.length);
+        for (let k = 0; k < takeN; k++) cards.push(pool[k]);
+        used += per - takeN;
+      } else {
+        const c = pool.find((x) => x.suit === suit);
+        if (c) cards.push(c); else used++;
+      }
     }
     if (used > wilds.length) return;
     push(cards.concat(wilds.slice(0, used)));
   }
 
-  /* A2345 轮子顺子 */
-  function tryWheel(push, byRank, wilds) {
-    const cards = [];
-    let used = 0;
-    for (const r of [14, 2, 3, 4, 5]) {
-      const pool = byRank[r] || [];
-      if (pool.length) cards.push(pool[0]); else used++;
-    }
-    if (used <= wilds.length) push(cards.concat(wilds.slice(0, used)));
+  function seqRanks(start, per) {
+    const levels = per === 1 ? 5 : (per === 2 ? 3 : 2);
+    const ranks = [];
+    for (let i = 0; i < levels; i++) ranks.push(start + i);
+    return ranks;
   }
 
-  /* 手牌中能压过 prevPlay 的所有出法 */
+  /* 手牌中能压过 prevPlay 的所有出法（同一组牌的多种解释分别参与判定） */
   function legalPlays(hand, prevPlay, level) {
     const combos = allCombos(hand, level);
     const seen = new Set();
     const out = [];
     for (const c of combos) {
       if (!beats(c.play, prevPlay)) continue;
-      const key = c.cards.map((x) => x.id).sort().join(',');
+      const key = c.cards.map((x) => x.id).sort().join(',') + '|' + c.play.type + '|' + c.play.rank;
       if (seen.has(key)) continue;
       seen.add(key);
       out.push(c);
@@ -343,12 +392,19 @@ const GuandanCore = (function () {
     return out;
   }
 
+  /* 多解释兜底（玩家手动选牌用）：identify 只给出牌力最优的一种解释，
+   * 但该解释未必压得过 prevPlay——只要存在任一解释能压即合法 */
+  function anyInterpretationBeats(cards, prevPlay, level) {
+    const n = cards.length;
+    return allCombos(cards, level).some((c) => c.cards.length === n && beats(c.play, prevPlay));
+  }
+
   return {
     SMALL_JOKER, BIG_JOKER, SUIT_HEART, RANKS, SUITS,
     RANK_NAMES, SUIT_CHARS, T, TYPE_NAMES,
     cardText, cardPower, isWild, makeDeck, shuffle, sortCards,
     identify, identifyFixed, beats, isBomb, bombPower, playPower, playText,
-    straightInfo, allCombos, legalPlays
+    straightInfo, allCombos, legalPlays, anyInterpretationBeats
   };
 })();
 

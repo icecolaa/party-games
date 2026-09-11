@@ -111,6 +111,13 @@ async function main() {
     assert.strictEqual(JSON.parse(r.text).ok, true);
   });
 
+  await t('GET /nav.js 返回游戏页公共导航脚本', async () => {
+    const r = await get(port, '/nav.js');
+    assert.strictEqual(r.status, 200);
+    assert.ok(r.text.includes('pgnav'), 'nav.js 内容异常');
+    assert.ok(r.headers['content-type'].includes('javascript'), 'MIME 应为 javascript');
+  });
+
   await t('未挂载前缀返回 404', async () => {
     const r = await get(port, '/other/');
     assert.strictEqual(r.status, 404);

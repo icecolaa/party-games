@@ -87,6 +87,7 @@ function handler(req, res) {
 
   if (req.method === 'GET' || req.method === 'HEAD') {
     if (p === '/' || p === '/index.html') return serveFile(res, HOME_DIR, '/index.html');
+    if (p === '/nav.js') return serveFile(res, HOME_DIR, '/nav.js'); // 游戏页公共导航脚本（白名单单文件）
   }
 
   for (const g of GAMES) {

@@ -30,8 +30,8 @@
   var style = document.createElement('style');
   style.textContent =
     '.pgnav-btn{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:calc(10px + env(safe-area-inset-left,0px));' +
-    'width:42px;height:42px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(18,14,40,.72);' +
-    'color:#f3f0ff;font-size:19px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;' +
+    'width:42px;height:42px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(35,39,42,.72);' +
+    'color:#ffffff;font-size:19px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;' +
     'z-index:2147483000;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);user-select:none;-webkit-user-select:none;' +
     '-webkit-tap-highlight-color:transparent;transition:background .15s ease,border-color .15s ease}' +
     '.pgnav-btn:hover{background:rgba(50,40,90,.8);border-color:rgba(255,209,102,.5)}' +
@@ -39,18 +39,18 @@
     'align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}' +
     '.pgnav-mask.on{display:flex}' +
     '.pgnav-panel{width:min(560px,100%);max-height:min(86vh,720px);overflow:auto;-webkit-overflow-scrolling:touch;' +
-    'background:linear-gradient(160deg,#1a1033,#0d1226);border:1px solid rgba(255,255,255,.13);border-radius:18px;' +
-    'padding:16px 14px 14px;color:#f3f0ff;font-family:"PingFang SC","Microsoft YaHei","Segoe UI",system-ui,sans-serif;' +
+    'background:#0e0f2d;border:1px solid rgba(255,255,255,.13);border-radius:16px;' +
+    'padding:16px 14px 14px;color:#ffffff;font-family:"Inter","DM Sans","Nunito","Segoe UI","PingFang SC","Microsoft YaHei",system-ui,sans-serif;' +
     'box-shadow:0 18px 50px rgba(0,0,0,.5)}' +
     '.pgnav-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}' +
     '.pgnav-title{font-size:15px;letter-spacing:1px;font-weight:600}' +
-    '.pgnav-close{width:30px;height:30px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);' +
-    'color:#e8ecf5;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}' +
+    '.pgnav-close{width:30px;height:30px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);' +
+    'color:#ffffff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}' +
     '.pgnav-close:hover{background:rgba(255,255,255,.14)}' +
     '.pgnav-home{display:flex;align-items:center;gap:9px;width:100%;padding:11px 12px;margin-bottom:12px;border-radius:12px;' +
-    'border:1px solid rgba(123,223,242,.4);background:rgba(123,223,242,.12);color:#7bdff2;font-size:14px;font-weight:600;' +
+    'border:1px solid rgba(0,176,244,.4);background:rgba(0,176,244,.12);color:#00b0f4;font-size:14px;font-weight:600;' +
     'cursor:pointer;text-decoration:none;-webkit-tap-highlight-color:transparent}' +
-    '.pgnav-home:hover{background:rgba(123,223,242,.2)}' +
+    '.pgnav-home:hover{background:rgba(0,176,244,.2)}' +
     '.pgnav-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}' +
     '.pgnav-item{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px 10px;' +
     'border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.055);color:inherit;font-size:12.5px;' +
@@ -59,7 +59,7 @@
     '.pgnav-item:hover{background:rgba(255,255,255,.12);border-color:rgba(255,209,102,.45)}' +
     '.pgnav-item.cur{border-color:rgba(255,209,102,.6);background:rgba(255,209,102,.1)}' +
     '.pgnav-item.cur::after{content:"当前";position:absolute;top:5px;right:5px;font-size:10px;padding:1px 6px;border-radius:999px;' +
-    'background:rgba(255,209,102,.18);color:#ffd166;border:1px solid rgba(255,209,102,.5)}' +
+    'background:rgba(255,209,102,.18);color:#5865f2;border:1px solid rgba(255,209,102,.5)}' +
     '.pgnav-item[aria-current="true"]{cursor:default}' +
     '.pgnav-item[aria-current="true"]:hover{background:rgba(255,209,102,.1);border-color:rgba(255,209,102,.6)}' +
     '@media (max-width:560px){.pgnav-grid{grid-template-columns:repeat(2,1fr);gap:9px}' +

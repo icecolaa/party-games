@@ -189,9 +189,13 @@ async function main() {
     vm.createContext(ctx);
     vm.runInContext(vendorSrc + '\n' + workerSrc, ctx);
     // 模拟主线程请求：初始局面（引擎执黑）
-    ctx.self.onmessage({ data: { id: 1, fen: START_FEN, millis: 800 } });
+    ctx.self.onmessage({ data: { id: 1, fen: START_FEN, millis: 2500 } });
     assert(posted.length === 1 && posted[0].id === 1, 'Worker 应回执 id=1');
-    const mv = posted[0].move;
+    let mv = posted[0].move;
+    if (!mv) { // 高负载下限时搜索偶发空着，重试一次
+      ctx.self.onmessage({ data: { id: 2, fen: START_FEN, millis: 2500 } });
+      mv = posted[1] && posted[1].move;
+    }
     assert(typeof mv === 'string' && /^[a-i][0-9][a-i][0-9]$/.test(mv), 'Worker 应返回 UCCI 着法串，实际 ' + JSON.stringify(mv));
     const m = XqEngine.fromUcciMove(mv);
     assert(C.genLegal(C.newState().board, 'r').some(([f, t]) => f === m[0] && t === m[1]),

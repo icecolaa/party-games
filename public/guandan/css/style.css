@@ -2,17 +2,17 @@
  * 掼蛋样式 · 深色牌桌 · 移动端优先
  * ============================================================ */
 :root {
-  --bg: #0e1420;
+  --bg: #0e0f2d;
   --table: #14532d;
   --table-dark: #0b3d21;
-  --panel: #1a2233;
-  --panel-2: #232d42;
+  --panel: #23272a;
+  --panel-2: #2c2f33;
   --line: rgba(255, 255, 255, .1);
-  --text: #e8ecf3;
-  --dim: #93a0b8;
-  --accent: #f0b429;
+  --text: #ffffff;
+  --dim: #babcd9;
+  --accent: #5865f2;
   --accent-2: #2f9e6b;
-  --danger: #e05252;
+  --danger: #de2761;
   --card-w: 62px;
   --card-h: 88px;
   --radius: 12px;
@@ -20,7 +20,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; overflow: hidden; }
 body {
-  font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+  font-family: 'Inter','DM Sans','Nunito','Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
   background: var(--bg);
   color: var(--text);
   font-size: 14px;
@@ -35,7 +35,7 @@ body {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 12px;
   padding-top: calc(8px + env(safe-area-inset-top));
-  background: #141b29;
+  background: #0e0f2d;
   border-bottom: 1px solid var(--line);
 }
 .logo { font-weight: 700; letter-spacing: 1px; font-size: 16px; white-space: nowrap; }
@@ -53,9 +53,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .ghost:active { background: #2c3a52; }
 .primary {
-  background: linear-gradient(180deg, #f5c453, #e0a418);
-  color: #23180a; font-weight: 700;
-  padding: 12px 18px; border-radius: 10px; width: 100%;
+  background: linear-gradient(180deg, #5865f2, #3442d9);
+  color: #ffffff; font-weight: 700;
+  padding: 12px 18px; border-radius: 12px; width: 100%;
 }
 .primary:disabled { opacity: .45; }
 
@@ -63,7 +63,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 #tableZone { flex: 1 1 auto; min-height: 0; display: flex; }
 #table {
   position: relative; flex: 1;
-  margin: 8px; border-radius: 18px;
+  margin: 8px; border-radius: 16px;
   background: radial-gradient(120% 100% at 50% 0%, #1a6b3c 0%, var(--table) 45%, var(--table-dark) 100%);
   box-shadow: inset 0 0 60px rgba(0, 0, 0, .35);
   overflow: hidden;
@@ -91,7 +91,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .seat-info .avatar { font-size: 15px; }
 .seat-info .name { max-width: 76px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .seat-info .count {
-  background: var(--accent); color: #23180a; font-weight: 700;
+  background: var(--accent); color: #ffffff; font-weight: 700;
   border-radius: 999px; padding: 0 6px; font-size: 11px; min-width: 18px; text-align: center;
 }
 .seat.active .seat-info { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(240, 180, 41, .3); }
@@ -107,12 +107,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .card {
   width: var(--card-w); height: var(--card-h);
   border-radius: 7px; background: #fdfdfd;
-  color: #1a1a1a; position: relative; flex: 0 0 auto;
+  color: #23272a; position: relative; flex: 0 0 auto;
   box-shadow: 0 2px 6px rgba(0, 0, 0, .4);
   font-weight: 700; line-height: 1;
   transition: transform .12s ease;
 }
-.card.red { color: #d02b2b; }
+.card.red { color: #de2761; }
 /* 左上角牌面：叠放时露出左上角也能辨认点数与花色 */
 .card .r, .card .s { position: absolute; left: 3px; }
 .card .r { top: 3px; font-size: 15px; }
@@ -153,7 +153,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 #actionBar {
   flex: 0 0 auto;
   display: flex; flex-direction: column;
-  background: #141b29; border-top: 1px solid var(--line);
+  background: #0e0f2d; border-top: 1px solid var(--line);
   padding-bottom: env(safe-area-inset-bottom);
 }
 #actButtons {
@@ -161,11 +161,11 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border-top: 1px solid var(--line);
 }
 .act {
-  flex: 1; padding: 12px 0; border-radius: 10px; font-weight: 700; font-size: 15px;
+  flex: 1; padding: 12px 0; border-radius: 12px; font-weight: 700; font-size: 15px;
   background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
 }
 .act:disabled { opacity: .35; }
-.act.play { background: linear-gradient(180deg, #f5c453, #e0a418); color: #23180a; border: none; }
+.act.play { background: linear-gradient(180deg, #5865f2, #3442d9); color: #ffffff; border: none; }
 .act.hint { flex: 0 0 74px; }
 
 /* ---------- 覆盖层 ---------- */
@@ -188,13 +188,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .field { margin-bottom: 14px; }
 .field > label { display: block; font-size: 12.5px; color: var(--dim); margin-bottom: 6px; }
 .field input, .field select {
-  width: 100%; padding: 11px 12px; border-radius: 9px;
+  width: 100%; padding: 11px 12px; border-radius: 12px;
   background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
   font-size: 15px; font-family: inherit;
 }
 .seg { display: flex; gap: 6px; }
 .seg-btn {
-  flex: 1; padding: 10px 0; border-radius: 9px; font-size: 13.5px;
+  flex: 1; padding: 10px 0; border-radius: 12px; font-size: 13.5px;
   background: var(--panel-2); border: 1px solid var(--line); color: var(--dim);
 }
 .seg-btn.active { background: rgba(240, 180, 41, .16); border-color: var(--accent); color: var(--accent); font-weight: 700; }
@@ -210,7 +210,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 #lobbyPlayers { margin: 12px 0; }
 .lobby-row {
   display: flex; align-items: center; gap: 8px;
-  padding: 9px 12px; border-radius: 9px; background: var(--panel-2);
+  padding: 9px 12px; border-radius: 12px; background: var(--panel-2);
   margin-bottom: 6px; font-size: 13.5px;
 }
 .lobby-row.off { opacity: .5; }
@@ -252,7 +252,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 /* 提示条 */
 #toast {
   position: fixed; left: 50%; bottom: 20%; transform: translateX(-50%) translateY(10px);
-  background: rgba(0, 0, 0, .88); color: #fff; padding: 10px 18px; border-radius: 10px;
+  background: rgba(0, 0, 0, .88); color: #fff; padding: 10px 18px; border-radius: 12px;
   font-size: 13.5px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
   z-index: 80; max-width: 80vw; text-align: center;
 }
@@ -265,7 +265,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   .card .r { font-size: 13px; }
   .card .s { font-size: 12px; top: 17px; }
   .card::after { font-size: 15px; }
-  #table { margin: 6px; border-radius: 14px; }
+  #table { margin: 6px; border-radius: 16px; }
   #center { width: 74%; }
   .seat-info { font-size: 11px; padding: 3px 8px; }
   .seat-info .name { max-width: 54px; }

@@ -5,25 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>飞行棋</title>
 <style>
-:root { --panel:#1a2233; --panel2:#232d42; --line:rgba(255,255,255,.1); --text:#e8ecf3; --dim:#93a0b8; --accent:#f0b429; }
+:root { --panel:#23272a; --panel2:#2c2f33; --line:rgba(255,255,255,.1); --text:#ffffff; --dim:#babcd9; --accent:#5865f2; }
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-body { font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif; background:linear-gradient(160deg,#141a28,#0d1220); color:var(--text); min-height:100dvh; display:flex; justify-content:center; padding:14px; padding-top:calc(14px + env(safe-area-inset-top)); user-select:none; -webkit-user-select:none; }
+body { font-family:'Inter','DM Sans','Nunito','Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif; background:#0e0f2d; color:var(--text); min-height:100dvh; display:flex; justify-content:center; padding:14px; padding-top:calc(14px + env(safe-area-inset-top)); user-select:none; -webkit-user-select:none; }
 #app { width:100%; max-width:640px; display:flex; flex-direction:column; gap:12px; }
 header { display:flex; align-items:center; gap:10px; }
 header h1 { font-size:19px; letter-spacing:2px; }
 header .turn { margin-left:auto; font-size:13px; color:var(--accent); font-weight:700; }
-#boardWrap { position:relative; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:8px; }
+#boardWrap { position:relative; background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:8px; }
 canvas { display:block; width:100%; height:auto; border-radius:8px; touch-action:manipulation; }
-.bar { display:flex; align-items:center; gap:12px; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px; }
+.bar { display:flex; align-items:center; gap:12px; background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:12px; }
 #dice { width:64px; height:64px; border-radius:12px; background:linear-gradient(160deg,#fff,#e8e2d0); color:#222; font-size:34px; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 16px rgba(0,0,0,.45); flex:0 0 auto; }
 #dice.rolling { animation:shake .5s ease infinite; }
 @keyframes shake { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-16deg) translateY(-6px)} 75%{transform:rotate(16deg) translateY(-3px)} }
 #msg { flex:1; font-size:14px; line-height:1.5; }
 button { font-family:inherit; cursor:pointer; }
-#rollBtn { background:linear-gradient(180deg,#f5c453,#e0a418); color:#23180a; font-weight:800; border:none; border-radius:12px; padding:14px 22px; font-size:16px; flex:0 0 auto; }
+#rollBtn { background:#5865f2; color:#ffffff; font-weight:800; border:none; border-radius:12px; padding:14px 22px; font-size:16px; flex:0 0 auto; }
 #rollBtn:disabled { opacity:.4; }
 .planes { display:flex; gap:8px; flex-wrap:wrap; }
-.pc { display:flex; align-items:center; gap:6px; background:var(--panel2); border-radius:9px; padding:6px 10px; font-size:12.5px; }
+.pc { display:flex; align-items:center; gap:6px; background:var(--panel2); border-radius:12px; padding:6px 10px; font-size:12.5px; }
 .pc .dot { width:12px; height:12px; border-radius:50%; }
 .hidden { display:none !important; }
 .overlay { position:fixed; inset:0; z-index:50; background:rgba(6,10,18,.85); display:flex; align-items:center; justify-content:center; padding:18px; }
@@ -32,36 +32,37 @@ button { font-family:inherit; cursor:pointer; }
 .panel h2 { font-size:17px; text-align:center; }
 .panel .sub { color:var(--dim); font-size:12.5px; text-align:center; line-height:1.6; }
 .seg { display:flex; gap:8px; flex-wrap:wrap; }
-.seg button { flex:1; min-width:70px; padding:10px 0; border-radius:10px; background:var(--panel2); border:1px solid var(--line); color:var(--dim); font-size:13px; }
-.seg button.active { border-color:var(--accent); color:var(--accent); background:rgba(240,180,41,.14); font-weight:700; }
+.seg button { flex:1; min-width:70px; padding:10px 0; border-radius:12px; background:var(--panel2); border:1px solid var(--line); color:var(--dim); font-size:13px; }
+.seg button.active { border-color:var(--accent); color:var(--accent); background:rgba(88,101,242,.14); font-weight:700; }
 label { font-size:12.5px; color:var(--dim); display:block; margin-bottom:5px; }
-input { width:100%; padding:10px 12px; border-radius:9px; background:var(--panel2); border:1px solid var(--line); color:var(--text); font-size:15px; font-family:inherit; }
-.primary { background:linear-gradient(180deg,#f5c453,#e0a418); color:#23180a; font-weight:700; padding:12px; border:none; border-radius:10px; font-size:15px; width:100%; }
-.ghost { background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:10px; padding:10px; font-size:13px; width:100%; }
+input { width:100%; padding:10px 12px; border-radius:12px; background:var(--panel2); border:1px solid var(--line); color:var(--text); font-size:15px; font-family:inherit; }
+.primary { background:#5865f2; color:#ffffff; font-weight:700; padding:12px; border:none; border-radius:12px; font-size:15px; width:100%; }
+.ghost { background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:12px; padding:10px; font-size:13px; width:100%; }
 #resultBody { text-align:center; font-size:15px; line-height:2; }
 #resultBody .win { color:var(--accent); font-weight:800; font-size:18px; }
 /* ---- 图文规则弹窗（统一风格） ---- */
 .rules-ov{position:fixed;inset:0;z-index:90;background:rgba(6,10,18,.88);display:flex;align-items:center;justify-content:center;padding:18px}
 .rules-ov.hidden{display:none}
-.rules-p{background:var(--panel,#1a2233);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:16px;padding:16px 16px 14px;width:100%;max-width:430px;max-height:calc(100dvh - 40px);overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.rules-p{background:var(--panel,#23272a);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:16px;padding:16px 16px 14px;width:100%;max-width:430px;max-height:calc(100dvh - 40px);overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.5)}
 .rules-p h2{font-size:17px;text-align:center;letter-spacing:1px;margin:0 0 2px}
-.rules-sub{color:var(--dim,#93a0b8);font-size:12px;text-align:center;margin-bottom:10px}
+.rules-sub{color:var(--dim,#babcd9);font-size:12px;text-align:center;margin-bottom:10px}
 .r-sec{margin-bottom:11px}
-.r-sec h3{font-size:13px;color:var(--accent,#f0b429);margin:0 0 5px}
-.r-art{background:rgba(0,0,0,.25);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:10px;padding:9px;margin-bottom:5px;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;font-size:19px;line-height:1.35}
+.r-sec h3{font-size:13px;color:var(--accent,#5865f2);margin:0 0 5px}
+.r-art{background:rgba(0,0,0,.25);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:12px;padding:9px;margin-bottom:5px;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;font-size:19px;line-height:1.35}
 .r-sec p{font-size:12.5px;line-height:1.7;margin:0}
-.r-sec p b{color:var(--accent,#f0b429)}
+.r-sec p b{color:var(--accent,#5865f2)}
 .r-lad{display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;font-size:12.5px;font-weight:700}
 .r-lad .lv{background:rgba(255,255,255,.1);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:6px;padding:2px 7px}
 .r-chip{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border:2px solid}
 .r-chip.r{color:#b02a1e;background:linear-gradient(160deg,#fff,#f0d9b5);border-color:#b02a1e}
 .r-chip.b{color:#1a3a6b;background:linear-gradient(160deg,#fff,#d5e2f0);border-color:#1a3a6b}
-.r-card{display:inline-flex;flex-direction:column;align-items:center;min-width:24px;padding:2px 5px;border-radius:4px;background:#fdfdfd;color:#1a1a1a;font-size:12px;font-weight:800;line-height:1.15;box-shadow:0 1px 3px rgba(0,0,0,.4)}
-.r-card.red{color:#d02b2b}
-.r-tile{display:inline-flex;flex-direction:column;align-items:center;min-width:22px;padding:2px 4px;border-radius:4px;background:linear-gradient(160deg,#fdfdfd,#e6e0d0);font-size:12px;font-weight:800;line-height:1.1;color:#1a1a1a;box-shadow:0 1px 3px rgba(0,0,0,.4)}
-.r-arrow{color:var(--dim,#93a0b8);font-size:14px}
-.rules-close{width:100%;padding:11px;border-radius:10px;background:linear-gradient(180deg,#f5c453,#e0a418);color:#23180a;font-weight:700;border:none;font-size:14px;cursor:pointer;margin-top:2px}
-.rq{width:30px;height:30px;border-radius:50%;background:var(--panel2,#232d42);border:1px solid var(--line,rgba(255,255,255,.1));color:var(--accent,#f0b429);font-weight:800;font-size:15px;cursor:pointer;flex:0 0 auto}
+.r-card{display:inline-flex;flex-direction:column;align-items:center;min-width:24px;padding:2px 5px;border-radius:4px;background:#fdfdfd;color:#23272a;font-size:12px;font-weight:800;line-height:1.15;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.r-card.red{color:#de2761}
+.r-tile{display:inline-flex;flex-direction:column;align-items:center;min-width:22px;padding:2px 4px;border-radius:4px;background:linear-gradient(160deg,#fdfdfd,#e6e0d0);font-size:12px;font-weight:800;line-height:1.1;color:#23272a;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.r-arrow{color:var(--dim,#babcd9);font-size:14px}
+.rules-close{width:100%;padding:11px;border-radius:12px;background:#5865f2;color:#ffffff;font-weight:700;border:none;font-size:14px;cursor:pointer;margin-top:2px}
+.rq{width:30px;height:30px;border-radius:50%;background:var(--panel2,#2c2f33);border:1px solid var(--line,rgba(255,255,255,.1));color:var(--accent,#5865f2);font-weight:800;font-size:15px;cursor:pointer;flex:0 0 auto}
+h1,h2{font-family:'Nunito Black','Nunito','Poppins','Inter','PingFang SC','Microsoft YaHei',system-ui,sans-serif;font-weight:800;letter-spacing:-0.01em;}
 </style>
 </head>
 <body>
@@ -141,7 +142,7 @@ input { width:100%; padding:10px 12px; border-radius:9px; background:var(--panel
       ctx.fillStyle = C.COLORS[t].hex + (t === S.turn && !S.over ? 'ff' : '88');
       ctx.fill();
     }
-    ctx.fillStyle = '#0d1220'; ctx.beginPath(); ctx.arc(0, 0, CELL * 0.8, 0, 7); ctx.fill();
+    ctx.fillStyle = '#0e0f2d'; ctx.beginPath(); ctx.arc(0, 0, CELL * 0.8, 0, 7); ctx.fill();
     ctx.restore();
     var seen = {};
     for (var pc = 0; pc < 4; pc++) {
@@ -346,8 +347,8 @@ input { width:100%; padding:10px 12px; border-radius:9px; background:var(--panel
  <div class="r-art"><span>🎲 掷出 6</span><span class="r-arrow">→</span><span>✈️ 起飞上环道</span><span class="r-arrow">·</span><span style="font-size:12px">掷 6 可再掷一次</span></div>
 </div>
 <div class="r-sec"><h3>🌀 前进</h3>
- <div class="r-art"><span style="color:#e05252">●</span><span class="r-arrow">落在自家颜色格 → 向前跳 4 格</span></div>
- <div class="r-art"><span style="color:#e05252">●</span><span class="r-arrow">💥 踩中敌机 → 送它回机场</span></div>
+ <div class="r-art"><span style="color:#de2761">●</span><span class="r-arrow">落在自家颜色格 → 向前跳 4 格</span></div>
+ <div class="r-art"><span style="color:#de2761">●</span><span class="r-arrow">💥 踩中敌机 → 送它回机场</span></div>
  <p>进终点道要<b>恰好点数</b>，超出会<b>回弹</b>。4 架飞机全部到达中心即获胜。可动的飞机会<b>发光</b>，点击它移动。</p>
 </div>
 

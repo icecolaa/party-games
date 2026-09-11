@@ -6,12 +6,12 @@
 <meta name="color-scheme" content="dark" />
 <title>智能五子棋</title>
 <style>
-  :root { --card: rgba(255,255,255,.055); --line: rgba(255,255,255,.09); --accent: #f0b429; }
+  :root { --card: rgba(255,255,255,.055); --line: rgba(255,255,255,.09); --accent: #5865f2; }
   * { box-sizing: border-box; }
   body {
-    margin: 0; min-height: 100vh; color: #e8ecf3;
-    font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
-    background: radial-gradient(1100px 700px at 15% -10%, #2b3450 0%, #171c26 55%, #10131b 100%);
+    margin: 0; min-height: 100vh; color: #ffffff;
+    font-family: 'Inter','DM Sans','Nunito','Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background: radial-gradient(1100px 700px at 15% -10%, #23272a 0%, #0e0f2d 55%, #0e0f2d 100%);
   }
   .app { max-width: 1120px; margin: 0 auto; padding: 26px 20px 40px; }
   header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
@@ -20,13 +20,13 @@
   main { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
   .board-wrap { position: relative; flex: 1 1 560px; max-width: 628px; }
   canvas {
-    display: block; width: 100%; height: auto; border-radius: 14px;
+    display: block; width: 100%; height: auto; border-radius: 16px;
     box-shadow: 0 20px 50px rgba(0,0,0,.5), 0 2px 8px rgba(0,0,0,.4);
     cursor: pointer; user-select: none; -webkit-user-select: none;
     touch-action: none; -webkit-touch-callout: none;
   }
   .banner {
-    position: absolute; inset: 0; border-radius: 14px;
+    position: absolute; inset: 0; border-radius: 16px;
     display: flex; flex-direction: column; gap: 16px; align-items: center; justify-content: center;
     pointer-events: none;
   }
@@ -44,14 +44,14 @@
     display: flex; gap: 10px; padding: 8px 10px;
     width: max-content; max-width: none; /* left:50% 定位会把可用宽压到一半，必须显式按内容取宽，否则按钮溢出背景 */
     background: #10141d; /* 实色底：iOS 对 backdrop-filter 内子元素渲染不稳定，实色保证背景完整包裹按钮 */
-    border: 1px solid rgba(255,255,255,.16); border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.16); border-radius: 16px;
     box-shadow: 0 10px 30px rgba(0,0,0,.5);
   }
   .confirm-bar.hidden { display: none; }
   .confirm-hint {
     position: absolute; left: 50%; bottom: 82px; transform: translateX(-50%);
     width: max-content; max-width: calc(100vw - 24px);
-    background: rgba(15,20,30,.94); border-radius: 10px; padding: 7px 14px;
+    background: rgba(15,20,30,.94); border-radius: 12px; padding: 7px 14px;
     font-size: 13px; text-align: center; pointer-events: none;
     border: 1px solid rgba(255,255,255,.18);
   }
@@ -61,23 +61,23 @@
   .confirm-bar button { flex: 0 0 auto; padding: 8px 18px; font-size: 14px; position: relative; z-index: 1; }
   .confirm-bar .primary { background: var(--accent); color: #231a05; }
   /* 取消按钮必须用实色：iOS WebView 下半透明背景在 backdrop-filter 父层内会被画丢 */
-  .confirm-bar .cancel { background: #39415a; color: #e8ecf3; border: 1px solid rgba(255,255,255,.25); }
+  .confirm-bar .cancel { background: #39415a; color: #ffffff; border: 1px solid rgba(255,255,255,.25); }
   .join-row { display: flex; gap: 8px; }
   .join-row input {
-    flex: 1; min-width: 0; background: #232a3a; color: #e8ecf3;
-    border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+    flex: 1; min-width: 0; background: #232a3a; color: #ffffff;
+    border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px;
     font-size: 16px; letter-spacing: 4px; text-transform: uppercase;
   }
   .room-code-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 15px; }
   .room-code-row b { font-size: 22px; letter-spacing: 5px; color: var(--accent); }
   .mini-ghost {
     flex: 0 0 auto; padding: 6px 14px; font-size: 13px; font-weight: 600;
-    background: rgba(255,255,255,.08); color: #e8ecf3; border: 1px solid var(--line); border-radius: 8px; cursor: pointer;
+    background: rgba(255,255,255,.08); color: #ffffff; border: 1px solid var(--line); border-radius: 8px; cursor: pointer;
     touch-action: manipulation; -webkit-tap-highlight-color: transparent;
   }
   #toast {
     position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%);
-    background: rgba(12,16,26,.92); color: #fff; padding: 10px 18px; border-radius: 10px;
+    background: rgba(12,16,26,.92); color: #fff; padding: 10px 18px; border-radius: 12px;
     border: 1px solid rgba(255,255,255,.15); font-size: 14px; max-width: 86vw;
     opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 99;
   }
@@ -89,14 +89,14 @@
     padding: 6px 9px; background: rgba(255,255,255,.045); border-radius: 8px;
     margin-bottom: 6px; font-size: 13px; line-height: 1.55; color: #c9d2e0;
   }
-  .coach-item.latest { background: rgba(240,180,41,.12); border: 1px solid rgba(240,180,41,.35); color: #eae2c8; }
+  .coach-item.latest { background: rgba(88,101,242,.12); border: 1px solid rgba(88,101,242,.35); color: #eae2c8; }
   .coach-item.warn { border-left: 3px solid #e67e22; }
   .coach-item.good { border-left: 3px solid #2ecc71; }
   details.coach-lesson { margin-top: 8px; }
   details.coach-lesson summary { cursor: pointer; font-size: 12px; color: #9aa5b5; }
   details.coach-lesson p { margin: 6px 0 0; font-size: 12px; color: #aab4c4; }
   .panel { flex: 0 1 300px; min-width: 260px; display: flex; flex-direction: column; gap: 14px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; }
   .status { display: flex; align-items: center; gap: 12px; min-height: 30px; font-size: 16px; font-weight: 600; }
   .stone-icon { width: 22px; height: 22px; border-radius: 50%; flex: 0 0 auto; }
   .stone-icon.black { background: radial-gradient(circle at 32% 28%, #7b828c 0%, #2c3038 40%, #05070b 100%); box-shadow: 0 2px 6px rgba(0,0,0,.5); }
@@ -111,18 +111,18 @@
   .seg { display: flex; gap: 6px; }
   .seg-btn {
     flex: 1; padding: 8px 0; font-size: 13px; font-weight: 600;
-    border-radius: 9px; cursor: pointer;
+    border-radius: 12px; cursor: pointer;
     background: rgba(255,255,255,.07); color: #c6cedb; border: 1px solid var(--line);
   }
   .seg-btn.active { background: var(--accent); color: #231a05; border-color: var(--accent); }
   .btns { display: flex; gap: 10px; }
   button {
     flex: 1; padding: 10px 0; font-size: 15px; font-weight: 600;
-    border: none; border-radius: 10px; cursor: pointer;
+    border: none; border-radius: 12px; cursor: pointer;
     background: var(--accent); color: #231a05;
     touch-action: manipulation; -webkit-tap-highlight-color: transparent;
   }
-  button.ghost { background: rgba(255,255,255,.08); color: #e8ecf3; border: 1px solid var(--line); }
+  button.ghost { background: rgba(255,255,255,.08); color: #ffffff; border: 1px solid var(--line); }
   button:active { transform: translateY(1px); }
   .hint { font-size: 12px; color: #8b96a8; line-height: 1.7; }
   .moveinfo { font-size: 13px; color: #9aa5b5; }
@@ -151,25 +151,26 @@
 /* ---- 图文规则弹窗（统一风格） ---- */
 .rules-ov{position:fixed;inset:0;z-index:90;background:rgba(6,10,18,.88);display:flex;align-items:center;justify-content:center;padding:18px}
 .rules-ov.hidden{display:none}
-.rules-p{background:var(--panel,#1a2233);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:16px;padding:16px 16px 14px;width:100%;max-width:430px;max-height:calc(100dvh - 40px);overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.rules-p{background:var(--panel,#23272a);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:16px;padding:16px 16px 14px;width:100%;max-width:430px;max-height:calc(100dvh - 40px);overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.5)}
 .rules-p h2{font-size:17px;text-align:center;letter-spacing:1px;margin:0 0 2px}
-.rules-sub{color:var(--dim,#93a0b8);font-size:12px;text-align:center;margin-bottom:10px}
+.rules-sub{color:var(--dim,#babcd9);font-size:12px;text-align:center;margin-bottom:10px}
 .r-sec{margin-bottom:11px}
-.r-sec h3{font-size:13px;color:var(--accent,#f0b429);margin:0 0 5px}
-.r-art{background:rgba(0,0,0,.25);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:10px;padding:9px;margin-bottom:5px;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;font-size:19px;line-height:1.35}
+.r-sec h3{font-size:13px;color:var(--accent,#5865f2);margin:0 0 5px}
+.r-art{background:rgba(0,0,0,.25);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:12px;padding:9px;margin-bottom:5px;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;font-size:19px;line-height:1.35}
 .r-sec p{font-size:12.5px;line-height:1.7;margin:0}
-.r-sec p b{color:var(--accent,#f0b429)}
+.r-sec p b{color:var(--accent,#5865f2)}
 .r-lad{display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;font-size:12.5px;font-weight:700}
 .r-lad .lv{background:rgba(255,255,255,.1);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:6px;padding:2px 7px}
 .r-chip{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border:2px solid}
 .r-chip.r{color:#b02a1e;background:linear-gradient(160deg,#fff,#f0d9b5);border-color:#b02a1e}
 .r-chip.b{color:#1a3a6b;background:linear-gradient(160deg,#fff,#d5e2f0);border-color:#1a3a6b}
-.r-card{display:inline-flex;flex-direction:column;align-items:center;min-width:24px;padding:2px 5px;border-radius:4px;background:#fdfdfd;color:#1a1a1a;font-size:12px;font-weight:800;line-height:1.15;box-shadow:0 1px 3px rgba(0,0,0,.4)}
-.r-card.red{color:#d02b2b}
-.r-tile{display:inline-flex;flex-direction:column;align-items:center;min-width:22px;padding:2px 4px;border-radius:4px;background:linear-gradient(160deg,#fdfdfd,#e6e0d0);font-size:12px;font-weight:800;line-height:1.1;color:#1a1a1a;box-shadow:0 1px 3px rgba(0,0,0,.4)}
-.r-arrow{color:var(--dim,#93a0b8);font-size:14px}
-.rules-close{width:100%;padding:11px;border-radius:10px;background:linear-gradient(180deg,#f5c453,#e0a418);color:#23180a;font-weight:700;border:none;font-size:14px;cursor:pointer;margin-top:2px}
-.rq{width:30px;height:30px;border-radius:50%;background:var(--panel2,#232d42);border:1px solid var(--line,rgba(255,255,255,.1));color:var(--accent,#f0b429);font-weight:800;font-size:15px;cursor:pointer;flex:0 0 auto}
+.r-card{display:inline-flex;flex-direction:column;align-items:center;min-width:24px;padding:2px 5px;border-radius:4px;background:#fdfdfd;color:#23272a;font-size:12px;font-weight:800;line-height:1.15;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.r-card.red{color:#de2761}
+.r-tile{display:inline-flex;flex-direction:column;align-items:center;min-width:22px;padding:2px 4px;border-radius:4px;background:linear-gradient(160deg,#fdfdfd,#e6e0d0);font-size:12px;font-weight:800;line-height:1.1;color:#23272a;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.r-arrow{color:var(--dim,#babcd9);font-size:14px}
+.rules-close{width:100%;padding:11px;border-radius:12px;background:#5865f2;color:#ffffff;font-weight:700;border:none;font-size:14px;cursor:pointer;margin-top:2px}
+.rq{width:30px;height:30px;border-radius:50%;background:var(--panel2,#2c2f33);border:1px solid var(--line,rgba(255,255,255,.1));color:var(--accent,#5865f2);font-weight:800;font-size:15px;cursor:pointer;flex:0 0 auto}
+h1,h2{font-family:'Nunito Black','Nunito','Poppins','Inter','PingFang SC','Microsoft YaHei',system-ui,sans-serif;font-weight:800;letter-spacing:-0.01em;}
 </style>
 </head>
 <body>
@@ -399,7 +400,7 @@
     if (S.engineHint && !S.over && !S.winCells &&
         S.board[G.idx(S.engineHint.x, S.engineHint.y)] === EMPTY) {
       ctx.save();
-      ctx.strokeStyle = 'rgba(240,180,41,.95)';
+      ctx.strokeStyle = 'rgba(88,101,242,.95)';
       ctx.lineWidth = 2.5;
       ctx.setLineDash([5, 4]);
       ctx.beginPath();
@@ -409,7 +410,7 @@
     }
 
     if (S.lastMove && !S.winCells) {
-      ctx.fillStyle = '#e64a2e';
+      ctx.fillStyle = '#de2761';
       ctx.beginPath();
       ctx.arc(PAD + S.lastMove.x * CELL, PAD + S.lastMove.y * CELL, 4.5, 0, Math.PI * 2);
       ctx.fill();
@@ -419,7 +420,7 @@
     if (pendingCell && !S.over && !S.thinking && S.turn === S.human &&
         S.board[G.idx(pendingCell.x, pendingCell.y)] === EMPTY) {
       drawStone(pendingCell.x, pendingCell.y, S.human, 0.55);
-      ctx.strokeStyle = 'rgba(240,180,41,.95)';
+      ctx.strokeStyle = 'rgba(88,101,242,.95)';
       ctx.lineWidth = 2.5;
       ctx.beginPath();
       ctx.arc(PAD + pendingCell.x * CELL, PAD + pendingCell.y * CELL, 19, 0, Math.PI * 2);
@@ -428,9 +429,9 @@
 
     if (S.winCells) {
       ctx.save();
-      ctx.strokeStyle = 'rgba(230,72,40,.9)';
+      ctx.strokeStyle = 'rgba(222,39,97,.9)';
       ctx.lineWidth = 5; ctx.lineCap = 'round';
-      ctx.shadowColor = 'rgba(230,72,40,.8)'; ctx.shadowBlur = 10;
+      ctx.shadowColor = 'rgba(222,39,97,.8)'; ctx.shadowBlur = 10;
       var f = S.winCells[0], l = S.winCells[S.winCells.length - 1];
       ctx.beginPath();
       ctx.moveTo(PAD + f[0] * CELL, PAD + f[1] * CELL);
@@ -1145,7 +1146,7 @@
 <h2>⚫ 五子棋玩法</h2>
 <div class="rules-sub">15×15 棋盘 · 黑先白后 · 无禁手</div>
 <div class="r-sec"><h3>🎯 怎么赢</h3>
- <div class="r-art"><span style="font-size:22px">⚫</span><span style="font-size:22px">⚫</span><span style="font-size:22px">⚫</span><span style="font-size:22px">⚫</span><span style="font-size:22px;filter:drop-shadow(0 0 4px #f0b429)">⚫</span></div>
+ <div class="r-art"><span style="font-size:22px">⚫</span><span style="font-size:22px">⚫</span><span style="font-size:22px">⚫</span><span style="font-size:22px">⚫</span><span style="font-size:22px;filter:drop-shadow(0 0 4px #5865f2)">⚫</span></div>
  <p>双方轮流在交叉点落子，横、竖、斜<b>任意方向先连成五子</b>即胜；棋盘下满判平局。</p>
 </div>
 <div class="r-sec"><h3>🎮 模式</h3>

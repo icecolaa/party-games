@@ -55,6 +55,7 @@ async function main() {
     if (JSON.stringify(calls) !== JSON.stringify(['/gomoku/'])) throw new Error('fetch 调用: ' + JSON.stringify(calls));
     if (w.document.title !== '五子棋(测试页)') throw new Error('文档未被替换, title=' + w.document.title);
     if (w.location.pathname !== '/gomoku/') throw new Error('地址未更新: ' + w.location.pathname);
+    if (w.__popReload !== 1) throw new Error('写入页面缺少 popstate→reload 引导');
   });
 
   await t('点击非卡片区域 → 不触发 fetch', async () => {
@@ -113,6 +114,38 @@ async function main() {
     await sleep(30);
     if (errs.length === 0) throw new Error('未观察到回退原生导航');
     void w;
+  });
+
+  console.log('— 前进后退引导 —');
+
+  await t('深路径恢复页同样带 popstate 引导', async () => {
+    const { dom } = boot('http://x/gomoku/', () => ({ ok: true, text: () => Promise.resolve(GAME_HTML) }));
+    await sleep(30);
+    if (dom.window.__popReload !== 1) throw new Error('恢复页面缺少 popstate→reload 引导');
+  });
+
+  await t('popstate → 整页重载（jsdom 表现为 navigation not implemented）', async () => {
+    const errs = [];
+    const vc = new VirtualConsole();
+    vc.on('jsdomError', (e) => { const m = String((e.detail && e.detail.message) || e.message); if (/navigation/.test(m)) errs.push(m); });
+    const dom = new JSDOM(LOBBY, {
+      url: 'http://x/',
+      runScripts: 'dangerously',
+      pretendToBeVisual: true,
+      virtualConsole: vc,
+      beforeParse(w) {
+        w.fetch = () => Promise.resolve({ ok: true, text: () => Promise.resolve(GAME_HTML) });
+      },
+    });
+    const w = dom.window;
+    w.document.querySelector('a.card[href="/gomoku/"] .go')
+      .dispatchEvent(new w.MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+    await sleep(30);
+    if (w.__popReload !== 1) throw new Error('引导未注入');
+    w.dispatchEvent(new w.PopStateEvent('popstate'));
+    await sleep(30);
+    if (errs.length === 0) throw new Error('popstate 未触发重载');
+    void dom;
   });
 
   console.log(`\n结果: PASS ${pass} / FAIL ${fail}`);

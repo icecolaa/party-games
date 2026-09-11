@@ -169,7 +169,14 @@
      * （点击卡片/刷新游戏页/打开邀请链接都会拿到大厅 HTML），而 fetch 与静态资源不受影响。
      * 这里改用 fetch 取真实页面后 document.write 重建文档，地址用 pushState 保持原路径，
      * 游戏页的相对资源、接口与邀请链接均不受影响。本地/直连环境深路径本就是真页面，仅
-     * 点卡片时多走一次 fetch，行为一致。 */
+     * 点卡片时多走一次 fetch，行为一致。
+     * 注意：document.open() 会清掉 window 上所有事件监听，因此「写入的页面」统一注入
+     * popstate→reload 引导脚本，保证浏览器前进/后退总是按当前地址重新加载页面。 */
+    var POP_BOOT = '<script>window.addEventListener("popstate",function(){location.reload()});window.__popReload=1;<\/script>';
+    function injectPopBoot(html) {
+      var i = html.lastIndexOf('</body>');
+      return i >= 0 ? html.slice(0, i) + POP_BOOT + html.slice(i) : html + POP_BOOT;
+    }
     function loadPath(path, search, replace) {
       fetch(path + (search || ''), { credentials: 'same-origin' })
         .then(function (r) {
@@ -179,7 +186,7 @@
         .then(function (html) {
           try { history[replace ? 'replaceState' : 'pushState'](null, '', path + (search || '')); } catch (e) { /* 忽略 */ }
           document.open();
-          document.write(html);
+          document.write(injectPopBoot(html));
           document.close();
         })
         .catch(function () {
@@ -188,14 +195,11 @@
         });
     }
 
-    // 深路径被平台改写成大厅时（刷新游戏页 / 打开邀请链接）：恢复该路径的真实页面
-    if (location.pathname !== '/') {
-      loadPath(location.pathname, location.search, true);
-      return;
-    }
+    // 本页收到 popstate（前进/后退）→ 按当前地址整页重载，语义最稳
+    window.addEventListener('popstate', function () { location.reload(); });
 
     // 拦截卡片普通左键点击，走 fetch 装载；中键 / Ctrl / Shift / 右键等仍走原生行为
-    document.addEventListener('click', function (ev) {
+    window.addEventListener('click', function (ev) {
       if (ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
       var t = ev.target;
       var a = t && t.closest ? t.closest('a.card') : null;
@@ -203,6 +207,9 @@
       ev.preventDefault();
       loadPath(a.getAttribute('href'), '', false);
     });
+
+    // 深路径被平台改写成大厅时（刷新游戏页 / 打开邀请链接）：恢复该路径的真实页面
+    if (location.pathname !== '/') loadPath(location.pathname, location.search, true);
   })();
   </script>
 </body>

@@ -161,5 +161,49 @@
       </a>
     </main>
   </div>
+
+  <script>
+  (function () {
+    'use strict';
+    /* PocketBay 托管壳缺陷绕过：平台边缘会把浏览器对子路径的「文档导航」改写回大厅
+     * （点击卡片/刷新游戏页/打开邀请链接都会拿到大厅 HTML），而 fetch 与静态资源不受影响。
+     * 这里改用 fetch 取真实页面后 document.write 重建文档，地址用 pushState 保持原路径，
+     * 游戏页的相对资源、接口与邀请链接均不受影响。本地/直连环境深路径本就是真页面，仅
+     * 点卡片时多走一次 fetch，行为一致。 */
+    function loadPath(path, search, replace) {
+      fetch(path + (search || ''), { credentials: 'same-origin' })
+        .then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.text();
+        })
+        .then(function (html) {
+          try { history[replace ? 'replaceState' : 'pushState'](null, '', path + (search || '')); } catch (e) { /* 忽略 */ }
+          document.open();
+          document.write(html);
+          document.close();
+        })
+        .catch(function () {
+          // 取不到（如平台休眠期）时退回原生导航，行为与旧版一致
+          location.href = path + (search || '');
+        });
+    }
+
+    // 深路径被平台改写成大厅时（刷新游戏页 / 打开邀请链接）：恢复该路径的真实页面
+    if (location.pathname !== '/') {
+      loadPath(location.pathname, location.search, true);
+      return;
+    }
+
+    // 拦截卡片普通左键点击，走 fetch 装载；中键 / Ctrl / Shift / 右键等仍走原生行为
+    document.addEventListener('click', function (ev) {
+      if (ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+      var t = ev.target;
+      var a = t && t.closest ? t.closest('a.card') : null;
+      if (!a) return;
+      ev.preventDefault();
+      loadPath(a.getAttribute('href'), '', false);
+    });
+  })();
+  </script>
 </body>
 </html>

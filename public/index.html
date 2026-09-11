@@ -13,157 +13,155 @@
     --accent: #ffd166; --accent2: #ef476f;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { height: 100%; }
+  /* 渐变铺在整份文档上（随内容增长），滚动不再出现断层硬边 */
   body {
     font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
-    background: radial-gradient(1200px 600px at 20% -10%, #35205e 0%, transparent 60%),
-                radial-gradient(1000px 500px at 90% 110%, #12324d 0%, transparent 55%),
-                linear-gradient(160deg, var(--bg1), var(--bg2));
+    background-color: var(--bg2);
+    background-image:
+      radial-gradient(1200px 600px at 20% -10%, #35205e 0%, transparent 60%),
+      radial-gradient(1000px 500px at 90% 110%, #12324d 0%, transparent 55%),
+      linear-gradient(160deg, var(--bg1), var(--bg2));
+    background-attachment: fixed;
+    background-repeat: no-repeat;
     color: var(--text);
     min-height: 100vh;
+    min-height: 100svh;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 48px 20px 40px;
+    padding: clamp(12px, 3vh, 34px) clamp(14px, 3vw, 28px);
   }
-  header { text-align: center; margin-bottom: 40px; }
+  .wrap { width: 100%; max-width: 1080px; margin: auto 0; align-self: center; }
+  header { text-align: center; margin-bottom: clamp(12px, 3vh, 30px); }
   header h1 {
-    font-size: clamp(30px, 6vw, 46px);
+    font-size: clamp(24px, 5.2vh, 42px);
     letter-spacing: 2px;
     background: linear-gradient(90deg, var(--accent), #ff8fa3, #7bdff2);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
   }
-  header p { color: var(--text-dim); margin-top: 10px; font-size: 15px; }
+  header p { color: var(--text-dim); margin-top: 6px; font-size: clamp(13px, 1.9vh, 15px); }
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 18px;
-    width: 100%;
-    max-width: 1020px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(10px, 1.8vh, 18px);
   }
   a.card {
     text-decoration: none;
     color: inherit;
     background: var(--card);
     border: 1px solid rgba(255, 255, 255, 0.09);
-    border-radius: 18px;
-    padding: 26px 22px 22px;
+    border-radius: 16px;
+    padding: clamp(13px, 2.3vh, 21px) clamp(13px, 1.5vw, 20px);
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 7px;
     transition: transform .18s ease, background .18s ease, border-color .18s ease;
   }
   a.card.ready:hover {
-    transform: translateY(-5px);
+    transform: translateY(-4px);
     background: var(--card-hover);
     border-color: rgba(255, 209, 102, 0.55);
   }
-  .card .icon { font-size: 44px; line-height: 1; }
-  .card h2 { font-size: 20px; letter-spacing: 1px; }
-  .card p { color: var(--text-dim); font-size: 13.5px; line-height: 1.65; flex: 1; }
-  .card .go { color: var(--accent); font-size: 14px; font-weight: 600; }
-  .card.locked { opacity: .52; }
+  .card .top { display: flex; align-items: center; gap: 10px; }
+  .card .icon { font-size: clamp(24px, 4.4vh, 36px); line-height: 1; }
+  .card h2 { font-size: clamp(16px, 2.7vh, 20px); letter-spacing: 1px; }
+  .card p {
+    color: var(--text-dim);
+    font-size: clamp(12.5px, 1.8vh, 13.5px);
+    line-height: 1.6;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card .go { color: var(--accent); font-size: clamp(12.5px, 1.9vh, 14px); font-weight: 600; }
   .badge {
-    align-self: flex-start;
-    font-size: 12px;
-    padding: 3px 10px;
+    margin-left: auto;
+    font-size: 11px;
+    padding: 2px 9px;
     border-radius: 999px;
     letter-spacing: 1px;
+    flex: none;
   }
   .badge.on { background: rgba(123, 223, 242, .16); color: #7bdff2; border: 1px solid rgba(123, 223, 242, .45); }
   .badge.soon { background: rgba(255, 255, 255, .08); color: var(--text-dim); border: 1px solid rgba(255, 255, 255, .16); }
   .card .go.hidden { visibility: hidden; }
-  footer { margin-top: 44px; color: var(--text-dim); font-size: 13px; text-align: center; line-height: 1.8; }
-  footer code { background: rgba(255,255,255,.08); padding: 2px 8px; border-radius: 6px; }
-  @media (max-width: 560px) { body { padding-top: 34px; } .grid { grid-template-columns: 1fr 1fr; gap: 12px; } a.card { padding: 18px 14px; } }
-  @media (max-width: 400px) { .grid { grid-template-columns: 1fr; } }
+  @media (max-width: 700px) {
+    .grid { grid-template-columns: 1fr 1fr; }
+    .card p { -webkit-line-clamp: 3; }
+    /* 窄卡不让徽章挤压标题：标题保持整行宽度，放不下时徽章换行到右侧 */
+    .card .top { flex-wrap: wrap; row-gap: 2px; }
+    .card h2 { min-width: fit-content; }
+  }
+  @media (max-width: 360px) {
+    .grid { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
-  <header>
-    <h1>🎉 聚会游戏合集</h1>
-    <p>一台设备或几台手机，打开就能一起玩</p>
-  </header>
+  <div class="wrap">
+    <header>
+      <h1>🎉 聚会游戏合集</h1>
+      <p>一台设备或几台手机，打开就能一起玩</p>
+    </header>
 
-  <main class="grid">
-    <a class="card ready" href="/gomoku/">
-      <span class="icon">⚫</span>
-      <h2>五子棋</h2>
-      <span class="badge on">可开玩</span>
-      <p>人机三档棋力对战，也可创建房间联机双人对决，自带教练提示与复盘。</p>
-      <span class="go">开始对局 →</span>
-    </a>
+    <main class="grid">
+      <a class="card ready" href="/gomoku/">
+        <span class="top"><span class="icon">⚫</span><h2>五子棋</h2><span class="badge on">可开玩</span></span>
+        <p>人机三档棋力对战，也可创建房间联机双人对决，自带教练提示与复盘。</p>
+        <span class="go">开始对局 →</span>
+      </a>
 
-    <a class="card ready" href="/poker/">
-      <span class="icon">🂡</span>
-      <h2>德州扑克</h2>
-      <span class="badge on">可开玩</span>
-      <p>单机 AI、双人热座、联网房间 2~8 人同桌，蒙特卡洛胜率提示，绿绒牌桌等你上座。</p>
-      <span class="go">上桌入座 →</span>
-    </a>
+      <a class="card ready" href="/poker/">
+        <span class="top"><span class="icon">🂡</span><h2>德州扑克</h2><span class="badge on">可开玩</span></span>
+        <p>单机 AI、双人热座、联网房间 2~8 人同桌，蒙特卡洛胜率提示，绿绒牌桌等你上座。</p>
+        <span class="go">上桌入座 →</span>
+      </a>
 
-    <a class="card ready" href="/guandan/">
-      <span class="icon">🃏</span>
-      <h2>掼蛋</h2>
-      <span class="badge on">可开玩</span>
-      <p>4 人两队对家为友，两副牌逢人配，顺子炸弹同花顺，先打过 A 获胜。</p>
-      <span class="go">开局组队 →</span>
-    </a>
+      <a class="card ready" href="/guandan/">
+        <span class="top"><span class="icon">🃏</span><h2>掼蛋</h2><span class="badge on">可开玩</span></span>
+        <p>4 人两队对家为友，两副牌逢人配，顺子炸弹同花顺，先打过 A 获胜。</p>
+        <span class="go">开局组队 →</span>
+      </a>
 
-    <a class="card ready" href="/chess/">
-      <span class="icon">♟</span>
-      <h2>中国象棋</h2>
-      <span class="badge on">可开玩</span>
-      <p>楚河汉界三档 AI，马走日象走田，绝杀困毙判负，支持悔棋。</p>
-      <span class="go">摆开阵势 →</span>
-    </a>
+      <a class="card ready" href="/chess/">
+        <span class="top"><span class="icon">♟</span><h2>中国象棋</h2><span class="badge on">可开玩</span></span>
+        <p>楚河汉界三档 AI，马走日象走田，绝杀困毙判负，支持悔棋。</p>
+        <span class="go">摆开阵势 →</span>
+      </a>
 
-    <a class="card ready" href="/doudizhu/">
-      <span class="icon">🎴</span>
-      <h2>斗地主</h2>
-      <span class="badge on">可开玩</span>
-      <p>1 打 2 叫分抢地主，顺子连对飞机炸弹，先出完的阵营获胜。</p>
-      <span class="go">抢地主 →</span>
-    </a>
+      <a class="card ready" href="/doudizhu/">
+        <span class="top"><span class="icon">🎴</span><h2>斗地主</h2><span class="badge on">可开玩</span></span>
+        <p>1 打 2 叫分抢地主，顺子连对飞机炸弹，先出完的阵营获胜。</p>
+        <span class="go">抢地主 →</span>
+      </a>
 
-    <a class="card ready" href="/mahjong/">
-      <span class="icon">🀄</span>
-      <h2>麻将</h2>
-      <span class="badge on">可开玩</span>
-      <p>万筒条 108 张，碰杠胡无吃，七对清一色碰碰胡，四人轮庄积分。</p>
-      <span class="go">开局码牌 →</span>
-    </a>
+      <a class="card ready" href="/mahjong/">
+        <span class="top"><span class="icon">🀄</span><h2>麻将</h2><span class="badge on">可开玩</span></span>
+        <p>万筒条 108 张，碰杠胡无吃，七对清一色碰碰胡，四人轮庄积分。</p>
+        <span class="go">开局码牌 →</span>
+      </a>
 
-    <a class="card ready" href="/flight/">
-      <span class="icon">✈️</span>
-      <h2>飞行棋</h2>
-      <span class="badge on">可开玩</span>
-      <p>掷 6 起飞跳 4 格打敌机，终点回弹，四色棋盘 1 打 3 AI。</p>
-      <span class="go">起飞 →</span>
-    </a>
+      <a class="card ready" href="/flight/">
+        <span class="top"><span class="icon">✈️</span><h2>飞行棋</h2><span class="badge on">可开玩</span></span>
+        <p>掷 6 起飞跳 4 格打敌机，终点回弹，四色棋盘 1 打 3 AI。</p>
+        <span class="go">起飞 →</span>
+      </a>
 
-    <a class="card ready" href="/dice/">
-      <span class="icon">🎲</span>
-      <h2>摇色子</h2>
-      <span class="badge on">可开玩</span>
-      <p>热座轮流摇比大小，对子翻倍，另有自由摇想摇就摇。</p>
-      <span class="go">摇起来 →</span>
-    </a>
+      <a class="card ready" href="/dice/">
+        <span class="top"><span class="icon">🎲</span><h2>摇色子</h2><span class="badge on">可开玩</span></span>
+        <p>热座轮流摇比大小，对子翻倍，另有自由摇想摇就摇。</p>
+        <span class="go">摇起来 →</span>
+      </a>
 
-    <a class="card ready" href="/rps/">
-      <span class="icon">✌️</span>
-      <h2>石头剪刀布</h2>
-      <span class="badge on">可开玩</span>
-      <p>人机或双人热座，AI 会记牌分析你的习惯，三局两胜见真章。</p>
-      <span class="go">出手 →</span>
-    </a>
-  </main>
-
-  <footer>
-    本地启动：<code>npm start</code> 后访问 <code>http://127.0.0.1:8600/</code><br>
-    联机玩法：同一网络下，好友用手机访问 <code>http://&lt;电脑IP&gt;:8600/</code>
-  </footer>
+      <a class="card ready" href="/rps/">
+        <span class="top"><span class="icon">✌️</span><h2>石头剪刀布</h2><span class="badge on">可开玩</span></span>
+        <p>人机或双人热座，AI 会记牌分析你的习惯，三局两胜见真章。</p>
+        <span class="go">出手 →</span>
+      </a>
+    </main>
+  </div>
 </body>
 </html>

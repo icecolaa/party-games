@@ -135,6 +135,31 @@ console.log('— AI（异步限时）—');
     if (s.over || steps >= 300) done++;
   }
   ok(done === 3, '3 局自对弈正常结束');
+
+  // 战术回归：黑炮白给（正将军红帅）必须被吃（搜索强化后不得退化为躲帅）
+  {
+    const st = C.newState();
+    for (let i = 0; i < 90; i++) st.board[i] = null;
+    st.board[85] = 'K'; st.board[4] = 'k';   // 双王
+    st.board[84] = 'A'; st.board[3] = 'a';   // 仕/士
+    st.board[49] = 'R';                       // 红车 @ (5,4)
+    st.board[22] = 'c';                       // 黑炮 @ (2,4)：隔车将军红帅，且车可安全吃炮
+    st.turn = 'r';
+    const mv = AI.pickBest(st, 'normal');
+    ok(mv && mv[0] === 49 && mv[1] === 22, '战术：红车吃掉白给的黑炮 ' + JSON.stringify(mv));
+    const hard = AI.pickBest(st, 'hard');
+    ok(hard && hard[0] === 49 && hard[1] === 22, '战术：hard 同样吃炮 ' + JSON.stringify(hard));
+  }
+
+  // hard 迭代加深限时生效
+  {
+    const st0 = C.newState();
+    const t1 = Date.now();
+    const mv2 = AI.pickBest(st0, 'hard');
+    const el = Date.now() - t1;
+    ok(mv2 && mv2.length === 2, 'hard 难度返回走法');
+    ok(el < 9000, 'hard 限时生效 ' + el + 'ms < 9s');
+  }
   console.log('结果: PASS ' + pass + ' / FAIL ' + fail);
   process.exit(fail ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });

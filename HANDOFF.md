@@ -26,12 +26,13 @@
 ## 二、仓库结构（重要：与旧认知不同）
 
 ```
-server.js        统一入口（大厅路由 + 静态 + 三子服务器挂载 + WebSocket）
-public/          ★ 全部前端（单一前端树）：index.html 大厅 + 每游戏一个子目录
+server.js        统一入口（大厅路由 + /nav.js 白名单 + 静态 + 三子服务器挂载 + WebSocket）
+public/          ★ 全部前端（单一前端树）：index.html 大厅 + 每游戏一个子目录 + nav.js 游戏页公共导航
 apps/<游戏>/      仅剩测试套件 tests/、package.json（本地工具）、README、LICENSE
 servers/         ★ 三个子游戏独立运行入口（wuziqi/poker/guandan-standalone.js）
 scripts/deploy.mjs  PocketBay 一键部署脚本
-tests/           smoke.js（30 项路由冒烟）+ rules-modal-test.js（45 项弹窗回归）
+tests/           smoke.js（34 项路由冒烟，含 /nav.js）+ rules-modal-test.js（45 项弹窗）
+                 + lobby-nav-test.js（8 项大厅装载导航）+ game-nav-test.js（6 项游戏页导航）
 ```
 
 - 前端已从 `apps/<游戏>/` **整体迁移到 `public/<游戏>/`**（解决 PocketBay 多产品判定），`apps/` 不再有 index.html/server.js。

@@ -48,6 +48,7 @@ const MjGame = (function () {
     for (const p of G.players) p.hand = C.sortTiles(p.hand);
     G.turn = G.dealer;
     G.lastDiscard = null;
+    G.discards = [];
     G.phase = 'playing';
     log('第 ' + (G.handNo + 1) + ' / ' + G.maxHands + ' 局 · 庄家：' + G.players[G.dealer].name, 'good');
     changed();
@@ -61,6 +62,7 @@ const MjGame = (function () {
     if (idx < 0) return { ok: false, reason: 'not_in_hand' };
     p.hand.splice(idx, 1);
     G.lastDiscard = { seat, tile };
+    (G.discards = G.discards || []).push({ seat, tile });
     log(p.name + ' 打 ' + C.tileText(tile));
     changed();
     return { ok: true };

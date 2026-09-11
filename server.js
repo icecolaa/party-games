@@ -78,7 +78,7 @@ function serveFile(res, base, relPath) {
     if (err) { res.writeHead(404); return res.end('not found'); }
     res.writeHead(200, {
       'Content-Type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream',
-      'Cache-Control': 'no-cache'
+      'Cache-Control': 'no-store'
     });
     res.end(data);
   });

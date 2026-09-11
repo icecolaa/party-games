@@ -14,22 +14,25 @@ header h1 { font-size:18px; letter-spacing:2px; }
 header .status { margin-left:auto; font-size:13px; font-weight:700; }
 header .status.check { color:var(--lose); }
 .board-wrap { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:10px; }
-#board { position:relative; width:100%; aspect-ratio:9/10; border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.5);
+#board { position:relative; width:100%; aspect-ratio:9/10; border-radius:8px; border:3px solid #8a6b3f; box-shadow:0 0 0 1px #5f4526, 0 10px 26px rgba(0,0,0,.5);
   /* 棋盘线 SVG：viewBox 90×100，交点 (5+10i, 5+10j) 与格子中心（棋子圆心）对齐；
      竖线 1..7 列在楚河汉界处断开，两侧九宫补斜线 */
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 100'%3E%3Cg stroke='%237a5a30' stroke-width='0.6' fill='none'%3E%3Cpath d='M5 15H85 M5 25H85 M5 35H85 M5 45H85 M5 55H85 M5 65H85 M5 75H85 M5 85H85'/%3E%3Cpath d='M5 5H85 M5 95H85' stroke-width='1.1'/%3E%3Cpath d='M5 5V95 M85 5V95' stroke-width='1.1'/%3E%3Cpath d='M15 5V45 M15 55V95 M25 5V45 M25 55V95 M35 5V45 M35 55V95 M45 5V45 M45 55V95 M55 5V45 M55 55V95 M65 5V45 M65 55V95 M75 5V45 M75 55V95'/%3E%3Cpath d='M35 5L55 25 M35 25L55 5 M35 75L55 95 M35 95L55 75'/%3E%3C/g%3E%3Ctext x='25' y='52.5' font-size='6.5' fill='%237a5a30' opacity='0.85' text-anchor='middle' font-family='KaiTi,STKaiti,serif'%3E楚 河%3C/text%3E%3Ctext x='65' y='52.5' font-size='6.5' fill='%237a5a30' opacity='0.85' text-anchor='middle' font-family='KaiTi,STKaiti,serif'%3E漢 界%3C/text%3E%3C/svg%3E"), linear-gradient(160deg, var(--wood), var(--wood-dark)); }
 .cell { position:absolute; width:calc(100%/9); height:calc(100%/10); display:flex; align-items:center; justify-content:center; cursor:pointer; }
 .cell .pt {
-  width:82%; height:82%; border-radius:50%;
+  width:86%; height:86%; border-radius:50%;
   display:flex; align-items:center; justify-content:center;
-  font-size:min(4.6vw, 26px); font-weight:800; line-height:1;
-  box-shadow:0 3px 6px rgba(0,0,0,.35), inset 0 -2px 3px rgba(0,0,0,.15);
-  border:2px solid;
+  font-size:min(4.8vw, 27px); font-weight:800; line-height:1;
+  font-family:'Nunito Black','Nunito','KaiTi','STKaiti','PingFang SC','Microsoft YaHei',serif;
+  background:radial-gradient(circle at 32% 28%, #fffdf4, #f6e9cb 58%, #e9d5ab);
+  border:2.5px solid;
+  box-shadow:0 3px 7px rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,255,255,.65), inset 0 -3px 4px rgba(138,107,63,.28);
 }
-.cell .pt.r { color:#b02a1e; background:linear-gradient(160deg,#fff,#f0d9b5); border-color:#b02a1e; }
-.cell .pt.b { color:#1a3a6b; background:linear-gradient(160deg,#fff,#d5e2f0); border-color:#1a3a6b; }
+.cell .pt.r { color:#b02a1e; border-color:#b02a1e; box-shadow:0 3px 7px rgba(0,0,0,.35), inset 0 0 0 2px rgba(176,42,30,.28), inset 0 -3px 4px rgba(138,107,63,.28); }
+.cell .pt.b { color:#262626; border-color:#262626; box-shadow:0 3px 7px rgba(0,0,0,.35), inset 0 0 0 2px rgba(38,38,38,.24), inset 0 -3px 4px rgba(138,107,63,.28); }
 .cell.sel .pt { box-shadow:0 0 0 3px var(--accent), 0 3px 6px rgba(0,0,0,.35); transform:scale(1.06); }
-.cell.last .pt { box-shadow:0 0 0 2px rgba(88,101,242,.65), 0 3px 6px rgba(0,0,0,.35); }
+.cell.last .pt { box-shadow:0 0 0 2px rgba(88,101,242,.75), 0 3px 6px rgba(0,0,0,.35); }
+.cell.from::after { content:''; position:absolute; inset:26%; border:2px dashed rgba(88,101,242,.75); border-radius:50%; pointer-events:none; }
 .cell .dot { width:22%; height:22%; border-radius:50%; background:var(--accent); opacity:.85; box-shadow:0 0 0 3px rgba(88,101,242,.35); }
 .cell.cap::after { content:""; position:absolute; inset:5%; border:3px dashed var(--accent); border-radius:50%; opacity:.9; pointer-events:none; }
 .bar { display:flex; gap:8px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px; }
@@ -124,7 +127,7 @@ h1,h2{font-family:'Nunito Black','Nunito','Poppins','Inter','PingFang SC','Micro
   'use strict';
   var C = window.XqCore, AI = window.XqAI, ENG = window.XqEngine;
   var $ = function (id) { return document.getElementById(id); };
-  var S = { st: null, sel: -1, legal: [], lastTo: -1, busy: false, level: 'normal', thinking: false };
+  var S = { st: null, sel: -1, legal: [], lastTo: -1, lastFrom: -1, busy: false, level: 'normal', thinking: false };
   var engineClient = ENG ? ENG.createClient({ workerUrl: 'js/engine-worker.js?v=1.0.0', timeMs: 1500 }) : null;
 
   function buildBoard() {
@@ -151,6 +154,7 @@ h1,h2{font-family:'Nunito Black','Nunito','Poppins','Inter','PingFang SC','Micro
       cell.innerHTML = '';
       cell.classList.toggle('sel', i === S.sel);
       cell.classList.toggle('last', i === S.lastTo);
+      cell.classList.toggle('from', i === S.lastFrom);
       var p = st.board[i];
       if (p) {
         var pt = document.createElement('div');
@@ -204,7 +208,7 @@ h1,h2{font-family:'Nunito Black','Nunito','Poppins','Inter','PingFang SC','Micro
   function doMove(f, t) {
     var r = C.move(S.st, f, t);
     if (!r.ok) { msg(moveErr(r.reason)); return; }
-    S.sel = -1; S.legal = []; S.lastTo = t;
+    S.sel = -1; S.legal = []; S.lastTo = t; S.lastFrom = f;
     render();
     if (S.st.over) { showResult(); return; }
     msg(S.level === 'engine' ? '引擎思考中…' : 'AI 思考中…');
@@ -213,7 +217,7 @@ h1,h2{font-family:'Nunito Black','Nunito','Poppins','Inter','PingFang SC','Micro
       S.busy = false;
       if (mv) {
         var r2 = C.move(S.st, mv[0], mv[1]);
-        if (r2.ok) { S.lastTo = mv[1]; }
+        if (r2.ok) { S.lastTo = mv[1]; S.lastFrom = mv[0]; }
       }
       render();
       if (S.st.over) { showResult(); return; }
@@ -255,7 +259,7 @@ h1,h2{font-family:'Nunito Black','Nunito','Poppins','Inter','PingFang SC','Micro
 
   function start() {
     S.st = C.newState();
-    S.sel = -1; S.legal = []; S.lastTo = -1; S.busy = false;
+    S.sel = -1; S.legal = []; S.lastTo = -1; S.lastFrom = -1; S.busy = false;
     $('setup').classList.add('hidden');
     $('result').classList.add('hidden');
     render();
@@ -286,7 +290,7 @@ h1,h2{font-family:'Nunito Black','Nunito','Poppins','Inter','PingFang SC','Micro
       st.turn = C.colorOf(h.piece);
       st.over = false; st.winner = null; st.reason = '';
     }
-    S.sel = -1; S.legal = []; S.lastTo = -1;
+    S.sel = -1; S.legal = []; S.lastTo = -1; S.lastFrom = -1;
     render();
     msg('已悔棋');
   });

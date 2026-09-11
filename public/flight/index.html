@@ -72,7 +72,7 @@ h1,h2{font-family:'Nunito Black','Nunito','Poppins','Inter','PingFang SC','Micro
   <div class="bar">
     <div id="dice">?</div>
     <div id="msg">点击「掷骰子」开始，掷到 6 起飞</div>
-    <button id="rollBtn">掷骰子</button>
+    <button id="rollBtn" disabled>掷骰子</button>
   </div>
   <div class="planes" id="planeCounts"></div>
 </div>
@@ -138,11 +138,13 @@ h1,h2{font-family:'Nunito Black','Nunito','Poppins','Inter','PingFang SC','Micro
     for (var t = 0; t < 4; t++) {
       ctx.beginPath(); ctx.moveTo(0, 0);
       var a = (t * 90 - 45) * Math.PI / 180, a2 = (t * 90 + 45) * Math.PI / 180;
-      ctx.arc(0, 0, CELL * 2.4, a, a2);
-      ctx.fillStyle = C.COLORS[t].hex + (t === S.turn && !S.over ? 'ff' : '88');
+      ctx.arc(0, 0, CELL * 1.45, a, a2);
+      ctx.closePath();
+      ctx.fillStyle = C.COLORS[t].hex + (t === S.turn && !S.over ? 'ee' : '77');
       ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 1; ctx.stroke();
     }
-    ctx.fillStyle = '#0e0f2d'; ctx.beginPath(); ctx.arc(0, 0, CELL * 0.8, 0, 7); ctx.fill();
+    ctx.fillStyle = '#0e0f2d'; ctx.beginPath(); ctx.arc(0, 0, CELL * 0.5, 0, 7); ctx.fill();
     ctx.restore();
     var seen = {};
     for (var pc = 0; pc < 4; pc++) {
@@ -332,6 +334,7 @@ h1,h2{font-family:'Nunito Black','Nunito','Poppins','Inter','PingFang SC','Micro
     $('setup').classList.remove('hidden');
   });
 
+  $('setup').classList.remove('hidden'); // 此前弹窗初始 hidden 且从不 startGame → 掷骰被 guard 拦死，页面无法游玩
   S.state = C.newState();
   draw();
 })();

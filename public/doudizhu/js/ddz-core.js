@@ -158,6 +158,28 @@ const DdzCore = (function () {
   }
 
   /* ---------- 候选生成（AI 用）：给定跟牌上下文生成全部合法出法 ---------- */
+
+  /* 附件里同时含双王 = 拆王炸作翅膀，主流规则不允许（双王是不可拆的火箭） */
+  function splitRocket(cards) {
+    return cards.some((c) => c.rank === 16) && cards.some((c) => c.rank === 17);
+  }
+
+  /* arr 中取 k 个的全部组合（用于附件穷举：三带一/四带二/飞机带翅等） */
+  function combos(arr, k) {
+    const res = [];
+    if (k <= 0) { res.push([]); return res; }
+    const rec = (start, acc) => {
+      if (acc.length === k) { res.push(acc.slice()); return; }
+      for (let i = start; i <= arr.length - (k - acc.length); i++) {
+        acc.push(arr[i]);
+        rec(i + 1, acc);
+        acc.pop();
+      }
+    };
+    rec(0, []);
+    return res;
+  }
+
   function genPlays(hand, prev) {
     if (prev && prev.play) prev = prev.play; // 兼容引擎 { seat, play, cards } 包装形状
     const res = [];
@@ -175,18 +197,18 @@ const DdzCore = (function () {
         if (beats(p, prev)) { seen.add(key); res.push({ play: p, cards }); return; }
       }
     };
-    const kickers = (excludeMain, nSingle, nPair, excl) => {
-      // 从手牌里挑 nSingle 个单张 / nPair 个对子，避开 excludeMain 与 excl
-      const singles = [], pairs = [];
+    /* 附件池：排除 excl 点数后的全部单张 / 全部对子（可拆对/三/炸） */
+    const pool = (excl) => {
+      const singles = [], pairRanks = [];
       for (const r of ranks) {
         if (excl.includes(r)) continue;
-        const cnt = byRank[r].length;
-        const avail = r === excludeMain ? Math.max(0, cnt - 3) : cnt;
-        for (let i = 0; i < avail; i++) singles.push(byRank[r][i]);
-        if (avail >= 2) pairs.push(byRank[r].slice(0, 2));
+        for (const c of byRank[r]) singles.push(c);
+        if (byRank[r].length >= 2) pairRanks.push(r);
       }
-      return { singles, pairs };
+      return { singles, pairRanks };
     };
+    /* 三条候选：手牌中数量 ≥3 的点数（大→小） */
+    const trioRanks = (exMain) => ranks.filter((r) => r !== exMain && byRank[r].length >= 3);
 
     if (!prev) { // 首出：所有基本牌型
       for (const r of ranks) {
@@ -194,15 +216,22 @@ const DdzCore = (function () {
         if (byRank[r].length >= 2) add(take(r, 2));
         if (byRank[r].length >= 3) add(take(r, 3));
         if (byRank[r].length === 4) add(take(r, 4));
-        // 三带一 / 三带二
+        // 三带一 / 三带二：附件穷举（附件不能含三条自身点数）
         if (byRank[r].length >= 3) {
-          const k = kickers(r, 1, 0, []);
-          if (k.singles.length >= 1) add(take(r, 3).concat([k.singles[0]]));
-          const k2 = kickers(r, 0, 1, []);
-          if (k2.pairs.length >= 1) add(take(r, 3).concat(k2.pairs[0]));
+          const { singles, pairRanks } = pool([r]);
+          for (const c of singles) add(take(r, 3).concat([c]));
+          for (const pr of pairRanks) add(take(r, 3).concat(take(pr, 2)));
+        }
+        // 四带二（单/对）：附件穷举
+        if (byRank[r].length === 4) {
+          const { singles, pairRanks } = pool([r]);
+          for (const pair2 of combos(singles, 2)) { if (splitRocket(pair2)) continue; add(take(r, 4).concat(pair2)); }
+          for (const prs of combos(pairRanks, 2)) add(take(r, 4).concat(take(prs[0], 2), take(prs[1], 2)));
         }
       }
-      // 顺子 / 连对 / 飞机（贪心枚举）
+      // 王炸（首出；此前生成器从未产出，AI 无法主动打王炸）
+      if (byRank[16] && byRank[17]) add([byRank[16][0], byRank[17][0]]);
+      // 顺子 / 连对 / 纯飞机（贪心枚举）
       for (let len = 5; len <= 12; len++) {
         for (let lo = 3; lo + len - 1 <= 14; lo++) {
           const cs = [];
@@ -236,6 +265,27 @@ const DdzCore = (function () {
           if (okSeq) add(cs);
         }
       }
+      // 飞机带单 / 飞机带对：连三张窗口 × 附件穷举
+      for (let k = 2; k <= 6; k++) {
+        for (let lo = 3; lo + k - 1 <= 14; lo++) {
+          const cs = [];
+          let okSeq = true;
+          const excl = [];
+          for (let r = lo; r < lo + k; r++) {
+            if (!byRank[r] || byRank[r].length < 3) { okSeq = false; break; }
+            cs.push(byRank[r][0], byRank[r][1], byRank[r][2]);
+            excl.push(r);
+          }
+          if (!okSeq) continue;
+          const { singles, pairRanks } = pool(excl);
+          for (const w of combos(singles, k)) { if (splitRocket(w)) continue; add(cs.concat(w)); }
+          for (const prs of combos(pairRanks, k)) {
+            const wings = [];
+            for (const pr of prs) wings.push(byRank[pr][0], byRank[pr][1]);
+            add(cs.concat(wings));
+          }
+        }
+      }
       return res;
     }
 
@@ -249,7 +299,6 @@ const DdzCore = (function () {
     if (t === T.BOMB) for (const r of ranks) if (r > main && byRank[r].length === 4) add(take(r, 4));
     if (t === T.STRAIGHT || t === T.PAIRSEQ || t === T.PLANE) {
       const per = t === T.STRAIGHT ? 1 : (t === T.PAIRSEQ ? 2 : 3);
-      const need = t === T.PLANE ? 3 : 1;
       for (let lo = main - seqLen + 2; lo + seqLen - 1 <= 14; lo++) {
         const cs = [];
         let okSeq = true;
@@ -263,10 +312,9 @@ const DdzCore = (function () {
     if (t === T.TRIPLE1 || t === T.TRIPLE2) {
       for (const r of ranks) {
         if (r <= main || byRank[r].length < 3) continue;
-        const k = kickers(r, 1, 0, []);
-        if (t === T.TRIPLE1 && k.singles.length >= 1) add(take(r, 3).concat([k.singles[0]]));
-        const k2 = kickers(r, 0, 1, []);
-        if (t === T.TRIPLE2 && k2.pairs.length >= 1) add(take(r, 3).concat(k2.pairs[0]));
+        const { singles, pairRanks } = pool([r]);
+        if (t === T.TRIPLE1) for (const c of singles) add(take(r, 3).concat([c]));
+        if (t === T.TRIPLE2) for (const pr of pairRanks) add(take(r, 3).concat(take(pr, 2)));
       }
     }
     if (t === T.PLANE1 || t === T.PLANE2 || t === T.PLANE) {
@@ -274,33 +322,31 @@ const DdzCore = (function () {
       for (let lo = prev.main - k + 2; lo + k - 1 <= 14; lo++) {
         const cs = [];
         let okSeq = true;
+        const excl = [];
         for (let r = lo; r < lo + k; r++) {
           if (!byRank[r] || byRank[r].length < 3) { okSeq = false; break; }
           cs.push(byRank[r][0], byRank[r][1], byRank[r][2]);
+          excl.push(r);
         }
         if (!okSeq) continue;
         if (t === T.PLANE) { add(cs); continue; }
-        // 带翅膀
-        const excl = [];
-        for (let r = lo; r < lo + k; r++) excl.push(r);
-        const k2 = kickers(-1, t === T.PLANE1 ? k : 0, t === T.PLANE2 ? k : 0, excl);
-        if (t === T.PLANE1 && k2.singles.length >= k) add(cs.concat(k2.singles.slice(0, k)));
-        if (t === T.PLANE2 && k2.pairs.length >= k) {
-          const wings = [];
-          for (const pr of k2.pairs.slice(0, k)) wings.push(pr[0], pr[1]);
-          add(cs.concat(wings));
+        const { singles, pairRanks } = pool(excl);
+        if (t === T.PLANE1) for (const w of combos(singles, k)) { if (splitRocket(w)) continue; add(cs.concat(w)); }
+        if (t === T.PLANE2) {
+          for (const prs of combos(pairRanks, k)) {
+            const wings = [];
+            for (const pr of prs) wings.push(byRank[pr][0], byRank[pr][1]);
+            add(cs.concat(wings));
+          }
         }
       }
     }
     if (t === T.FOUR2 || t === T.FOUR4) {
       for (const r of ranks) {
         if (r <= main || byRank[r].length < 4) continue;
-        const k2 = kickers(r, 2, 0, []);
-        if (t === T.FOUR2 && k2.singles.length >= 2) add(take(r, 4).concat(k2.singles.slice(0, 2)));
-        const k4 = kickers(r, 0, 2, []);
-        if (t === T.FOUR4 && k4.pairs.length >= 2) {
-          add(take(r, 4).concat(k4.pairs[0], k4.pairs[1]));
-        }
+        const { singles, pairRanks } = pool([r]);
+        if (t === T.FOUR2) for (const pair2 of combos(singles, 2)) { if (splitRocket(pair2)) continue; add(take(r, 4).concat(pair2)); }
+        if (t === T.FOUR4) for (const prs of combos(pairRanks, 2)) add(take(r, 4).concat(take(prs[0], 2), take(prs[1], 2)));
       }
     }
     // 炸弹 / 王炸可压一切非炸弹

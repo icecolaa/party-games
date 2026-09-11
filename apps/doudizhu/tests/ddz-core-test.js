@@ -95,5 +95,59 @@ ok(C.identify(hand('s2 h2 d2 c2 sW hW')).every(p => p.type !== T.ROCKET), '222+w
   ok(strong >= 10, '王炸+炸弹+2 强牌高分');
 }
 
+/* 差分回归（2026-09-12 对齐 rlcard）：首出整族牌型 + 附件穷举 + 拆王炸守卫 */
+{
+  const canon = (cards) => cards.map((c) => c.rank).sort((a, b) => b - a).join(',');
+  const kinds = (plays) => plays.map((p) => p.play.type);
+
+  // 1) 首出：王炸必须进候选（此前从不生成）
+  {
+    const h = hand('w W s5 h5');
+    ok(C.genPlays(h, null).some((p) => p.play.type === T.ROCKET), '首出王炸应进入候选');
+  }
+
+  // 2) 首出：四带二 / 四带两对（此前整族缺失）
+  {
+    const h = hand('s5 h5 d5 c5 s9 h9 d3');
+    const plays = C.genPlays(h, null);
+    ok(plays.some((p) => p.play.type === T.FOUR2), '首出四带二应进入候选');
+    ok(plays.some((p) => p.play.type === T.FOUR2 && p.cards.length === 6), '四带二共 6 张');
+  }
+
+  // 3) 首出：三带一附件穷举（每个可用单张都要有对应候选）
+  {
+    const h = hand('s5 h5 d5 c5 s9 h9 d3 c3');
+    const plays = C.genPlays(h, null);
+    const trio1 = plays.filter((p) => p.play.type === T.TRIPLE1);
+    ok(trio1.length >= 4, '三条 555 应有 ≥4 种带单（9 9 3 3），实际 ' + trio1.length);
+  }
+
+  // 4) 首出：飞机带单（此前整族缺失）
+  {
+    const h = hand('s5 h5 d5 s6 h6 d6 s9 h9 d3 c3');
+    const plays = C.genPlays(h, null);
+    const plane1 = plays.filter((p) => p.play.type === T.PLANE1);
+    ok(plane1.length > 0, '飞机(56)带单应进入候选');
+    ok(plane1.every((p) => p.cards.length === 8), '飞机带单共 8 张');
+  }
+
+  // 5) 拆王炸守卫：四带二的附件不能同时含双王
+  {
+    const h = hand('s5 h5 d5 c5 w W');
+    const plays = C.genPlays(h, null).filter((p) => p.play.type === T.FOUR2);
+    ok(plays.length === 0, '四带二不得以拆王炸作附件，实际 ' + plays.length);
+    // 但王炸本身仍可出
+    ok(C.genPlays(h, null).some((p) => p.play.type === T.ROCKET), '王炸本身仍可首出');
+  }
+
+  // 6) 跟牌：三带二附件穷举
+  {
+    const h = hand('sK hK dK s3 h3 s4 h4 c4 d4');
+    const prev = { type: T.TRIPLE2, main: 8, size: 5 };
+    const trio2 = C.genPlays(h, prev).filter((p) => p.play.type === T.TRIPLE2);
+    ok(trio2.length >= 2, 'KKK 带对应有 ≥2 种（33/44），实际 ' + trio2.length);
+  }
+}
+
 console.log('结果: PASS ' + pass + ' / FAIL ' + fail);
 process.exit(fail ? 1 : 0);

@@ -73,7 +73,24 @@ npm run deploy             # PocketBay 一键部署（读 ~/.pocketbay 凭证，
 7. **开源调研落地进度（2026-09-12）**：调研报告 `work/github-idea-report.md` §七「采用方案深化」已排 P0~P3。**P0 两项已完成**：
    - 德州胜率提示：新增 `public/poker/equity.js`（转/河牌精确枚举 `equityExact` + 确定性建议 `suggestAction`），徽章升级「胜率(精确)｜跟注需｜建议」；`aiDecideCore(p, det)` 确定性模式（对战行为不变）；联网模式广播无 `stats` 的防御修复。校准测试见 `poker-test.js` §2b/2c。
    - 掼蛋差分：`tools/guandan-diff/`（driver.js + harness.py，参考引擎 welkin03/guandan-ai MIT 需 `git clone` 到 `vendor/`，已 gitignore）。首跑修出 4 类引擎真缺陷：同花顺不进 AI 候选、A 低位回绕（A2233/AAA222）不认、三带二万能替换枚举不全、天王炸不进候选；生成改「构造即带解释」+ 新增 `anyInterpretationBeats` 手动出牌兜底。修复后 300 局 missing 归零。fuzz（`gd-fuzz-test.js`，32 万断言）已入 npm test。
-   - P1~P3 待做：象棋 eleeye 服务端档、斗地主 rlcard 差分 oracle、五子棋 rapfi 分析档、xqwlight 浏览器兜底、斗地主 DMC 训练（详见报告 §7.7 优先级表）。
+   - **P1~P2 也已完成（2026-09-12 同日）**：
+     * 象棋服务端档：`servers/engine-host.js`（通用行协议引擎宿主）+ `servers/chess-engine.js`
+       （UCCI 适配，/chess/api/health 与 /chess/api/bestmove，无引擎 501）+
+       `public/chess/js/xq-engine.js`（FEN/UCCI 换算+客户端）+ 前端「棋神」档
+       （服务端引擎 → xqwlight Worker → 本地 hard 三级回退）；测试
+       `apps/chess/tests/xq-engine-test.js`（24 项，用 fixtures/fake-ucci-engine.js）。
+     * 五子棋分析档：`servers/gomoku-engine.js`（piskvork 适配，/gomoku/api/health 与
+       /gomoku/api/analyze）+ 前端教练卡「💡 引擎提示」按钮（501 回落本地 AI）；
+       测试 `apps/gomoku/tests/gm-engine-test.js`（11 项，假 piskvork 引擎）。
+     * xqwlight 兜底：`public/chess/vendor/`（position/search/book.js 原样 GPL-2.0）+
+       `public/chess/js/engine-worker.js`（postMessage 边界）+ `LICENSES/NOTICE.md`。
+     * 斗地主差分：`tools/doudizhu-diff/`（rlcard via pip vendor）。修出 ddz-core 三类
+       缺陷：首出从不生成四带二/四带两对/飞机带单/飞机带对/王炸；附件只出单一代表；
+       拆王炸作翅膀未禁止。修复后 200 局 missing=0。
+   - 引擎二进制获取约定：`engines/<game>/`（gitignore，不入库不入部署包），放置方法见
+     `engines/chess/README.md`、`engines/gomoku/README.md`；许可合规见 `LICENSES/NOTICE.md`。
+     当前网络无法访问 github.com 时可走 jsdelivr CDN（data.jsdelivr.com / cdn.jsdelivr.net/gh）。
+   - **P3 暂缓**：斗地主 DMC 训练 + JS 推理需 1~2 周训练算力，待资源到位再启动。
 
 ## 六、验收状态（v2 报告结论）
 

@@ -1,3 +1,7 @@
-*
-!.gitignore
-!*/README.md
+/*
+!chess/
+!gomoku/
+chess/*
+gomoku/*
+!chess/README.md
+!gomoku/README.md

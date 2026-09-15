@@ -1,0 +1,364 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "聚会游戏合集（party-games）系统架构",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://gitee.com/ice-colaa/party-games.git",
+      "provider": "gitee",
+      "revision": "2b69c4012183d5ccf7990b576b0c6ecb2c0a7f51"
+    },
+    "views": [
+      {
+        "id": "main-path",
+        "label": "主数据路径",
+        "focus": [
+          "browser",
+          "gateway",
+          "card-svc"
+        ],
+        "note": "对局请求从浏览器经统一入口进入房间服务，状态再广播回来。"
+      },
+      {
+        "id": "engine-chain",
+        "label": "引擎链路与回落",
+        "focus": [
+          "gateway",
+          "engine-host",
+          "engine",
+          "xqw"
+        ],
+        "note": "可选强引擎子进程缺席时 501 回落，前端用页内 Worker 兜底。"
+      },
+      {
+        "id": "hosting",
+        "label": "托管边界",
+        "focus": [
+          "pocketbay",
+          "gateway"
+        ],
+        "note": "单一产品部署包上传托管平台，壳层与边缘改写是已知平台约束。"
+      }
+    ],
+    "viewBox": [
+      1140,
+      470
+    ]
+  },
+  "components": [
+    {
+      "id": "browser",
+      "type": "external",
+      "label": "玩家浏览器",
+      "sublabel": "大厅 + 9 游戏页",
+      "pos": [
+        30,
+        200
+      ],
+      "size": [
+        170,
+        64
+      ],
+      "tag": "规则/AI 页内运行",
+      "sources": [
+        {
+          "path": "public/index.html",
+          "label": "大厅入口"
+        }
+      ]
+    },
+    {
+      "id": "xqw",
+      "type": "frontend",
+      "label": "xqwlight 兜底 Worker",
+      "sublabel": "GPL-2.0 vendor 原样",
+      "pos": [
+        30,
+        330
+      ],
+      "size": [
+        170,
+        52
+      ],
+      "sources": [
+        {
+          "path": "public/chess/js/engine-worker.js",
+          "label": "Worker 包装"
+        },
+        {
+          "path": "public/chess/vendor/search.js",
+          "label": "GPL 引擎原样"
+        }
+      ]
+    },
+    {
+      "id": "pocketbay",
+      "type": "cloud",
+      "label": "PocketBay 托管平台",
+      "sublabel": "部署包 · 托管壳 iframe · 边缘",
+      "pos": [
+        340,
+        50
+      ],
+      "size": [
+        200,
+        56
+      ],
+      "sources": [
+        {
+          "path": "scripts/deploy.mjs",
+          "label": "部署脚本"
+        }
+      ]
+    },
+    {
+      "id": "gateway",
+      "type": "backend",
+      "label": "server.js 统一入口",
+      "sublabel": "零依赖 Node · 静态挂载 · WS 升级",
+      "pos": [
+        380,
+        200
+      ],
+      "size": [
+        180,
+        64
+      ],
+      "tag": "唯一有状态进程",
+      "sources": [
+        {
+          "path": "server.js",
+          "line": 19,
+          "end_line": 40,
+          "label": "GAMES 注册表"
+        }
+      ]
+    },
+    {
+      "id": "gomoku-svc",
+      "type": "backend",
+      "label": "五子棋房间服务",
+      "sublabel": "wuziqi-standalone · HTTP",
+      "pos": [
+        660,
+        60
+      ],
+      "size": [
+        180,
+        56
+      ],
+      "sources": [
+        {
+          "path": "servers/wuziqi-standalone.js",
+          "label": "房间 + HTTP"
+        }
+      ]
+    },
+    {
+      "id": "card-svc",
+      "type": "backend",
+      "label": "掼蛋 / 德州房间服务",
+      "sublabel": "guandan / poker-standalone · WS",
+      "pos": [
+        660,
+        200
+      ],
+      "size": [
+        180,
+        64
+      ],
+      "sources": [
+        {
+          "path": "servers/guandan-standalone.js",
+          "label": "掼蛋 WS"
+        },
+        {
+          "path": "servers/poker-standalone.js",
+          "label": "德州 WS"
+        }
+      ]
+    },
+    {
+      "id": "engine-host",
+      "type": "backend",
+      "label": "引擎宿主 + 适配器",
+      "sublabel": "engine-host · UCCI / piskvork",
+      "pos": [
+        380,
+        330
+      ],
+      "size": [
+        180,
+        56
+      ],
+      "sources": [
+        {
+          "path": "servers/engine-host.js",
+          "label": "子进程宿主"
+        },
+        {
+          "path": "servers/chess-engine.js",
+          "label": "UCCI 适配"
+        }
+      ]
+    },
+    {
+      "id": "engine",
+      "type": "external",
+      "label": "外部引擎子进程",
+      "sublabel": "eleeye（LGPL）· rapfi（GPL）",
+      "pos": [
+        680,
+        330
+      ],
+      "size": [
+        170,
+        56
+      ],
+      "tag": "可选 · 不入部署包",
+      "sources": [
+        {
+          "path": "engines/chess/README.md",
+          "label": "引擎放置约定"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "PocketBay 托管边界（单一产品部署包）",
+      "wraps": [
+        "gateway",
+        "gomoku-svc",
+        "card-svc",
+        "engine-host"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "引擎许可 / 信任隔离（进程 · 文本协议）",
+      "wraps": [
+        "engine-host"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "hosting",
+      "from": "pocketbay",
+      "to": "gateway",
+      "label": "托管 · 壳与边缘",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 20,
+      "labelDx": -55
+    },
+    {
+      "id": "main-req",
+      "from": "browser",
+      "to": "gateway",
+      "label": "HTTP / WS 请求",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelDy": -14
+    },
+    {
+      "id": "main-back",
+      "from": "gateway",
+      "to": "browser",
+      "label": "页面 · 对局广播",
+      "fromSide": "left",
+      "toSide": "right",
+      "labelDy": 16
+    },
+    {
+      "id": "mount-gomoku",
+      "from": "gateway",
+      "to": "gomoku-svc",
+      "label": "挂载 /gomoku/api/*",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "mount-cards",
+      "from": "gateway",
+      "to": "card-svc",
+      "label": "WS 升级挂载 ⇄ 房间事件",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelDy": 62
+    },
+    {
+      "id": "engine-query",
+      "from": "gateway",
+      "to": "engine-host",
+      "label": "查询 bestmove（无引擎 501）",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 25
+    },
+    {
+      "id": "engine-pipe",
+      "from": "engine-host",
+      "to": "engine",
+      "label": "文本管道",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelDy": -16
+    },
+    {
+      "id": "fallback",
+      "from": "xqw",
+      "to": "browser",
+      "label": "501 回落 · 页内 Worker",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "许可与信任隔离",
+      "items": [
+        "engines/ 引擎二进制：进程 + 文本协议隔离（LGPL/GPL），不入库不入部署包",
+        "public/chess/vendor：xqwlight GPL-2.0 原样分发，Worker 消息边界",
+        "LICENSES/NOTICE.md 汇总第三方声明"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "离线差分工具（不进运行时）",
+      "items": [
+        "tools/guandan-diff：对照 welkin03/guandan-ai（MIT）",
+        "tools/doudizhu-diff：对照 rlcard（MIT）",
+        "随机整局差分已收敛 missing=0，仅本机 Python 运行"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "部署与发布",
+      "items": [
+        "scripts/deploy.mjs：单一产品部署包直传 PocketBay",
+        "托管壳改写绕过：大厅 fetch 装载 + no-store + 改写重试",
+        "mynovel.me 为同一代码的自部署镜像，需随 master 重新发布"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "质量基建",
+      "items": [
+        "25 个测试套件 · 25 套全绿（引擎 / UI / 网络 / 冒烟）",
+        "掼蛋与斗地主规则差分 oracle（missing=0 收敛）",
+        "关键修复均经浏览器实机试玩闭环验收"
+      ]
+    }
+  ]
+}
